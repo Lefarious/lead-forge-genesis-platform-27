@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { Loader2, Search, Plus } from 'lucide-react';
 import { Keyword } from '@/contexts/MarketingToolContext';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -131,7 +131,8 @@ const KeywordStep: React.FC = () => {
               </Button>
               <Button 
                 onClick={handleGenerateKeywords} 
-                className="bg-marketing-600 hover:bg-marketing-700"
+                variant="default"
+                className="bg-marketing-600 hover:bg-marketing-700 text-white transition-colors"
                 disabled={isGenerating}
               >
                 {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -189,17 +190,109 @@ const KeywordStep: React.FC = () => {
           </Card>
           
           <div className="flex justify-between items-center mb-8">
-            <Button 
-              variant="outline" 
-              onClick={() => setIsAddDialogOpen(true)}
-              className="flex gap-1 items-center"
-            >
-              <Plus className="h-4 w-4" />
-              Add Custom Keyword
-            </Button>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className="flex gap-1 items-center hover:bg-gray-100 transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Custom Keyword
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[550px]">
+                <DialogHeader>
+                  <DialogTitle>Add Custom Keyword</DialogTitle>
+                  <DialogDescription>
+                    Add a custom keyword for your SEO and content strategy.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="term" className="text-right">
+                      Keyword Term
+                    </Label>
+                    <Input
+                      id="term"
+                      value={newKeyword.term}
+                      onChange={(e) => setNewKeyword({ ...newKeyword, term: e.target.value })}
+                      className="col-span-3"
+                      placeholder="e.g., business process automation"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="searchVolume" className="text-right">
+                      Search Volume
+                    </Label>
+                    <Input
+                      id="searchVolume"
+                      value={newKeyword.searchVolume}
+                      onChange={(e) => setNewKeyword({ ...newKeyword, searchVolume: e.target.value })}
+                      className="col-span-3"
+                      placeholder="e.g., 5,400/mo"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="difficulty" className="text-right">
+                      Difficulty
+                    </Label>
+                    <select
+                      id="difficulty"
+                      value={newKeyword.difficulty}
+                      onChange={(e) => setNewKeyword({ ...newKeyword, difficulty: e.target.value })}
+                      className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <option value="Low">Low</option>
+                      <option value="Medium-Low">Medium-Low</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Medium-High">Medium-High</option>
+                      <option value="High">High</option>
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="relevance" className="text-right">
+                      Relevance
+                    </Label>
+                    <select
+                      id="relevance"
+                      value={newKeyword.relevance}
+                      onChange={(e) => setNewKeyword({ ...newKeyword, relevance: e.target.value })}
+                      className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <option value="Low">Low</option>
+                      <option value="Medium">Medium</option>
+                      <option value="High">High</option>
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="relatedICP" className="text-right">
+                      Related ICP
+                    </Label>
+                    <select
+                      id="relatedICP"
+                      value={newKeyword.relatedICP}
+                      onChange={(e) => setNewKeyword({ ...newKeyword, relatedICP: e.target.value })}
+                      className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {icps.map((icp) => (
+                        <option key={icp.id} value={icp.title}>{icp.title}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className="hover:bg-gray-100 transition-colors">
+                    Cancel
+                  </Button>
+                  <Button onClick={handleAddCustomKeyword} className="bg-marketing-600 hover:bg-marketing-700 transition-colors">
+                    Add Keyword
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
             <Button 
               onClick={handleGenerateKeywords} 
-              className="bg-marketing-600 hover:bg-marketing-700"
+              className="bg-marketing-600 hover:bg-marketing-700 text-white transition-colors"
               disabled={isGenerating}
             >
               {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -208,108 +301,22 @@ const KeywordStep: React.FC = () => {
           </div>
           
           <div className="flex justify-between">
-            <Button variant="outline" onClick={() => setCurrentStep(4)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setCurrentStep(4)}
+              className="hover:bg-gray-100 transition-colors"
+            >
               Back
             </Button>
             <Button 
               onClick={handleContinue} 
-              className="bg-marketing-600 hover:bg-marketing-700"
+              className="bg-marketing-600 hover:bg-marketing-700 text-white transition-colors"
             >
               Continue to Content Ideas
             </Button>
           </div>
         </>
       )}
-
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[550px]">
-          <DialogHeader>
-            <DialogTitle>Add Custom Keyword</DialogTitle>
-            <DialogDescription>
-              Add a custom keyword for your SEO and content strategy.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="term" className="text-right">
-                Keyword Term
-              </Label>
-              <Input
-                id="term"
-                value={newKeyword.term}
-                onChange={(e) => setNewKeyword({ ...newKeyword, term: e.target.value })}
-                className="col-span-3"
-                placeholder="e.g., business process automation"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="searchVolume" className="text-right">
-                Search Volume
-              </Label>
-              <Input
-                id="searchVolume"
-                value={newKeyword.searchVolume}
-                onChange={(e) => setNewKeyword({ ...newKeyword, searchVolume: e.target.value })}
-                className="col-span-3"
-                placeholder="e.g., 5,400/mo"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="difficulty" className="text-right">
-                Difficulty
-              </Label>
-              <select
-                id="difficulty"
-                value={newKeyword.difficulty}
-                onChange={(e) => setNewKeyword({ ...newKeyword, difficulty: e.target.value })}
-                className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="Low">Low</option>
-                <option value="Medium-Low">Medium-Low</option>
-                <option value="Medium">Medium</option>
-                <option value="Medium-High">Medium-High</option>
-                <option value="High">High</option>
-              </select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="relevance" className="text-right">
-                Relevance
-              </Label>
-              <select
-                id="relevance"
-                value={newKeyword.relevance}
-                onChange={(e) => setNewKeyword({ ...newKeyword, relevance: e.target.value })}
-                className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="Low">Low</option>
-                <option value="Medium">Medium</option>
-                <option value="High">High</option>
-              </select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="relatedICP" className="text-right">
-                Related ICP
-              </Label>
-              <select
-                id="relatedICP"
-                value={newKeyword.relatedICP}
-                onChange={(e) => setNewKeyword({ ...newKeyword, relatedICP: e.target.value })}
-                className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {icps.map((icp) => (
-                  <option key={icp.id} value={icp.title}>{icp.title}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAddCustomKeyword}>Add Keyword</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

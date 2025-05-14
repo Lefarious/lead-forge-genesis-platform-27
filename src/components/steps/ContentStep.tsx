@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
@@ -226,12 +227,14 @@ const ContentStep: React.FC = () => {
               <Button 
                 onClick={() => setCurrentStep(5)} 
                 variant="outline"
+                className="hover:bg-gray-100 transition-colors"
               >
                 Back to Keywords
               </Button>
               <Button 
                 onClick={handleGenerateContent} 
-                className="bg-marketing-600 hover:bg-marketing-700"
+                variant="default"
+                className="bg-marketing-600 hover:bg-marketing-700 text-white transition-colors"
                 disabled={isGenerating}
               >
                 {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -252,7 +255,7 @@ const ContentStep: React.FC = () => {
               
               <Button 
                 onClick={handleContinue} 
-                className="bg-marketing-600 hover:bg-marketing-700"
+                className="bg-marketing-600 hover:bg-marketing-700 text-white transition-colors"
               >
                 Continue to Publishing
               </Button>
@@ -299,17 +302,174 @@ const ContentStep: React.FC = () => {
           </Tabs>
           
           <div className="flex justify-between items-center mb-8">
-            <Button 
-              variant="outline" 
-              onClick={() => setIsAddDialogOpen(true)}
-              className="flex gap-1 items-center"
-            >
-              <Plus className="h-4 w-4" />
-              Add Custom Content Idea
-            </Button>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className="flex gap-1 items-center hover:bg-gray-100 transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Custom Content Idea
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[650px]">
+                <DialogHeader>
+                  <DialogTitle>Add Custom Content Idea</DialogTitle>
+                  <DialogDescription>
+                    Create a custom content idea for your marketing strategy.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4 max-h-[500px] overflow-y-auto pr-2">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="title" className="text-right">
+                      Title
+                    </Label>
+                    <Input
+                      id="title"
+                      value={newContent.title}
+                      onChange={(e) => setNewContent({ ...newContent, title: e.target.value })}
+                      className="col-span-3"
+                      placeholder="e.g., How to Automate Your Business Processes"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="contentType" className="text-right">
+                      Content Type
+                    </Label>
+                    <select
+                      id="contentType"
+                      value={newContent.type}
+                      onChange={(e) => setNewContent({ ...newContent, type: e.target.value })}
+                      className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <option value="Blog Post">Blog Post</option>
+                      <option value="White Paper">White Paper</option>
+                      <option value="eBook">eBook</option>
+                      <option value="Webinar">Webinar</option>
+                      <option value="Case Study">Case Study</option>
+                      <option value="Infographic">Infographic</option>
+                      <option value="Video">Video</option>
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="targetICP" className="text-right">
+                      Target ICP
+                    </Label>
+                    <select
+                      id="targetICP"
+                      value={newContent.targetICP}
+                      onChange={(e) => setNewContent({ ...newContent, targetICP: e.target.value })}
+                      className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {icps.map((icp) => (
+                        <option key={icp.id} value={icp.title}>{icp.title}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-4 items-start gap-4">
+                    <Label htmlFor="targetKeywords" className="text-right pt-2">
+                      Target Keywords
+                    </Label>
+                    <div className="col-span-3 space-y-3">
+                      <div className="flex gap-2">
+                        <Input
+                          id="targetKeywords"
+                          value={currentKeyword}
+                          onChange={(e) => setCurrentKeyword(e.target.value)}
+                          placeholder="Enter a keyword"
+                        />
+                        <Button 
+                          type="button" 
+                          variant="outline"
+                          className="hover:bg-gray-100 transition-colors"
+                          onClick={handleAddKeyword}
+                        >
+                          Add
+                        </Button>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {newContent.targetKeywords?.map((keyword, idx) => (
+                          <Badge key={idx} variant="outline" className="flex items-center gap-1 bg-gray-100">
+                            {keyword}
+                            <button 
+                              type="button" 
+                              onClick={() => handleRemoveKeyword(idx)}
+                              className="ml-1 hover:text-red-500 text-xs"
+                            >
+                              ✕
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 items-start gap-4">
+                    <Label htmlFor="outline" className="text-right pt-2">
+                      Content Outline
+                    </Label>
+                    <div className="col-span-3 space-y-3">
+                      <div className="flex gap-2">
+                        <Input
+                          id="outline"
+                          value={currentOutlineItem}
+                          onChange={(e) => setCurrentOutlineItem(e.target.value)}
+                          placeholder="Enter an outline point"
+                        />
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          className="hover:bg-gray-100 transition-colors"
+                          onClick={handleAddOutlineItem}
+                        >
+                          Add
+                        </Button>
+                      </div>
+                      <ul className="list-disc pl-4">
+                        {newContent.outline?.map((item, idx) => (
+                          <li key={idx} className="flex items-center justify-between">
+                            <span>{item}</span>
+                            <button 
+                              type="button" 
+                              onClick={() => handleRemoveOutlineItem(idx)}
+                              className="ml-2 hover:text-red-500"
+                            >
+                              ✕
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="estimatedValue" className="text-right">
+                      Estimated Value
+                    </Label>
+                    <select
+                      id="estimatedValue"
+                      value={newContent.estimatedValue}
+                      onChange={(e) => setNewContent({ ...newContent, estimatedValue: e.target.value })}
+                      className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <option value="Low">Low</option>
+                      <option value="Medium">Medium</option>
+                      <option value="High">High</option>
+                      <option value="Very High">Very High</option>
+                    </select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className="hover:bg-gray-100 transition-colors">
+                    Cancel
+                  </Button>
+                  <Button onClick={handleAddCustomContent} className="bg-marketing-600 hover:bg-marketing-700 text-white transition-colors">
+                    Add Content Idea
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
             <Button 
               onClick={handleGenerateContent} 
-              className="bg-marketing-600 hover:bg-marketing-700"
+              className="bg-marketing-600 hover:bg-marketing-700 text-white transition-colors"
               disabled={isGenerating}
             >
               {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -318,7 +478,7 @@ const ContentStep: React.FC = () => {
           </div>
           
           <div className="flex justify-between">
-            <Button variant="outline" onClick={() => setCurrentStep(5)}>
+            <Button variant="outline" onClick={() => setCurrentStep(5)} className="hover:bg-gray-100 transition-colors">
               Back
             </Button>
           </div>
@@ -356,167 +516,13 @@ const ContentStep: React.FC = () => {
             </div>
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="hover:bg-gray-100 transition-colors">
               Cancel
             </Button>
-            <Button onClick={handleSaveEdit} className="bg-marketing-600 hover:bg-marketing-700">
+            <Button onClick={handleSaveEdit} className="bg-marketing-600 hover:bg-marketing-700 text-white transition-colors">
               Save Edit Notes
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Add Custom Content Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[650px]">
-          <DialogHeader>
-            <DialogTitle>Add Custom Content Idea</DialogTitle>
-            <DialogDescription>
-              Create a custom content idea for your marketing strategy.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4 max-h-[500px] overflow-y-auto pr-2">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="title" className="text-right">
-                Title
-              </Label>
-              <Input
-                id="title"
-                value={newContent.title}
-                onChange={(e) => setNewContent({ ...newContent, title: e.target.value })}
-                className="col-span-3"
-                placeholder="e.g., How to Automate Your Business Processes"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="contentType" className="text-right">
-                Content Type
-              </Label>
-              <select
-                id="contentType"
-                value={newContent.type}
-                onChange={(e) => setNewContent({ ...newContent, type: e.target.value })}
-                className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="Blog Post">Blog Post</option>
-                <option value="White Paper">White Paper</option>
-                <option value="eBook">eBook</option>
-                <option value="Webinar">Webinar</option>
-                <option value="Case Study">Case Study</option>
-                <option value="Infographic">Infographic</option>
-                <option value="Video">Video</option>
-              </select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="targetICP" className="text-right">
-                Target ICP
-              </Label>
-              <select
-                id="targetICP"
-                value={newContent.targetICP}
-                onChange={(e) => setNewContent({ ...newContent, targetICP: e.target.value })}
-                className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {icps.map((icp) => (
-                  <option key={icp.id} value={icp.title}>{icp.title}</option>
-                ))}
-              </select>
-            </div>
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="targetKeywords" className="text-right pt-2">
-                Target Keywords
-              </Label>
-              <div className="col-span-3 space-y-3">
-                <div className="flex gap-2">
-                  <Input
-                    id="targetKeywords"
-                    value={currentKeyword}
-                    onChange={(e) => setCurrentKeyword(e.target.value)}
-                    placeholder="Enter a keyword"
-                  />
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={handleAddKeyword}
-                  >
-                    Add
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {newContent.targetKeywords?.map((keyword, idx) => (
-                    <Badge key={idx} variant="outline" className="flex items-center gap-1 bg-gray-100">
-                      {keyword}
-                      <button 
-                        type="button" 
-                        onClick={() => handleRemoveKeyword(idx)}
-                        className="ml-1 hover:text-red-500 text-xs"
-                      >
-                        ✕
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="outline" className="text-right pt-2">
-                Content Outline
-              </Label>
-              <div className="col-span-3 space-y-3">
-                <div className="flex gap-2">
-                  <Input
-                    id="outline"
-                    value={currentOutlineItem}
-                    onChange={(e) => setCurrentOutlineItem(e.target.value)}
-                    placeholder="Enter an outline point"
-                  />
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={handleAddOutlineItem}
-                  >
-                    Add
-                  </Button>
-                </div>
-                <ul className="list-disc pl-4">
-                  {newContent.outline?.map((item, idx) => (
-                    <li key={idx} className="flex items-center justify-between">
-                      <span>{item}</span>
-                      <button 
-                        type="button" 
-                        onClick={() => handleRemoveOutlineItem(idx)}
-                        className="ml-2 hover:text-red-500"
-                      >
-                        ✕
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="estimatedValue" className="text-right">
-                Estimated Value
-              </Label>
-              <select
-                id="estimatedValue"
-                value={newContent.estimatedValue}
-                onChange={(e) => setNewContent({ ...newContent, estimatedValue: e.target.value })}
-                className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="Low">Low</option>
-                <option value="Medium">Medium</option>
-                <option value="High">High</option>
-                <option value="Very High">Very High</option>
-              </select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAddCustomContent}>Add Content Idea</Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
@@ -588,7 +594,7 @@ const ContentCard: React.FC<ContentCardProps> = ({ content, onPublish, onEdit })
         </div>
       </CardContent>
       <CardFooter className="flex justify-between pt-2">
-        <Button variant="outline" onClick={() => onEdit(content)}>
+        <Button variant="outline" onClick={() => onEdit(content)} className="hover:bg-gray-100 transition-colors">
           Edit Notes
         </Button>
         {content.published ? (
@@ -601,7 +607,7 @@ const ContentCard: React.FC<ContentCardProps> = ({ content, onPublish, onEdit })
         ) : (
           <Button 
             onClick={() => onPublish(content.id)} 
-            className="bg-marketing-600 hover:bg-marketing-700"
+            className="bg-marketing-600 hover:bg-marketing-700 text-white transition-colors"
           >
             Publish
           </Button>
