@@ -26,11 +26,7 @@ const GeographyStep: React.FC = () => {
 
   const handleGenerateGeographies = async () => {
     if (!localStorage.getItem('openai_api_key')) {
-      toast({
-        title: "API Key Missing",
-        description: "Please set your OpenAI API key first",
-        variant: "destructive"
-      });
+      toast.error('Please set your OpenAI API key first');
       return;
     }
 
@@ -49,16 +45,9 @@ const GeographyStep: React.FC = () => {
       });
       
       setGeographies([...geographies, ...uniqueGeographies]); // Append new geographies
-      toast({
-        title: "Success!",
-        description: "Target geographies generated!",
-      });
+      toast.success('Target geographies generated!');
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to generate geographies",
-        variant: "destructive"
-      });
+      toast.error('Failed to generate geographies');
       console.error(error);
     } finally {
       setIsGenerating(false);
@@ -68,11 +57,7 @@ const GeographyStep: React.FC = () => {
   const handleAddCustomGeography = () => {
     if (!newGeography.region || !newGeography.marketSize || !newGeography.growthRate || 
         !newGeography.competitionLevel || !newGeography.recommendation) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill all fields",
-        variant: "destructive"
-      });
+      toast.error('Please fill all fields');
       return;
     }
 
@@ -85,19 +70,12 @@ const GeographyStep: React.FC = () => {
       competitionLevel: '',
       recommendation: ''
     });
-    toast({
-      title: "Success!",
-      description: "Custom geography added successfully",
-    });
+    toast.success('Custom geography added successfully');
   };
 
   const handleContinue = () => {
     if (geographies.length === 0) {
-      toast({
-        title: "Required Data",
-        description: "Please generate geographies first",
-        variant: "destructive"
-      });
+      toast.error('Please generate geographies first');
       return;
     }
     setCurrentStep(5);
@@ -179,14 +157,14 @@ const GeographyStep: React.FC = () => {
             <Button 
               variant="outline" 
               onClick={() => setIsAddDialogOpen(true)}
-              className="flex gap-1 items-center"
+              className="flex gap-1 items-center hover:bg-marketing-100 hover:text-marketing-700 transition-colors"
             >
               <Plus className="h-4 w-4" />
               Add Custom Geography
             </Button>
             <Button 
               onClick={handleGenerateGeographies} 
-              className="bg-marketing-600 hover:bg-marketing-700"
+              className="bg-marketing-600 hover:bg-marketing-700 transition-colors"
               disabled={isGenerating}
             >
               {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -200,7 +178,7 @@ const GeographyStep: React.FC = () => {
             </Button>
             <Button 
               onClick={handleContinue} 
-              className="bg-marketing-600 hover:bg-marketing-700"
+              className="bg-marketing-600 hover:bg-marketing-700 transition-colors"
             >
               Continue to Keywords
             </Button>
@@ -282,7 +260,12 @@ const GeographyStep: React.FC = () => {
             <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAddCustomGeography}>Add Geography</Button>
+            <Button 
+              onClick={handleAddCustomGeography}
+              className="bg-marketing-600 hover:bg-marketing-700 transition-colors"
+            >
+              Add Geography
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
