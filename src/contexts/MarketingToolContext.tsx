@@ -27,6 +27,7 @@ export type USP = {
   description: string;
   targetICP: string;
   valueProposition: string;
+  isCustomAdded?: boolean;
 };
 
 export type Geography = {
@@ -36,6 +37,7 @@ export type Geography = {
   growthRate: string;
   competitionLevel: string;
   recommendation: string;
+  isCustomAdded?: boolean;
 };
 
 export type Keyword = {
@@ -45,6 +47,7 @@ export type Keyword = {
   difficulty: string;
   relevance: string;
   relatedICP: string;
+  isCustomAdded?: boolean;
 };
 
 export type ContentIdea = {
@@ -57,6 +60,7 @@ export type ContentIdea = {
   estimatedValue: string;
   published: boolean;
   publishLink?: string;
+  isCustomAdded?: boolean;
 };
 
 export type LandingPage = {
@@ -80,12 +84,16 @@ export type MarketingToolContextType = {
   addCustomICP: (icp: ICP) => void;
   usps: USP[];
   setUSPs: (usps: USP[]) => void;
+  addCustomUSP: (usp: USP) => void;
   geographies: Geography[];
   setGeographies: (geos: Geography[]) => void;
+  addCustomGeography: (geo: Geography) => void;
   keywords: Keyword[];
   setKeywords: (keywords: Keyword[]) => void;
+  addCustomKeyword: (keyword: Keyword) => void;
   contentIdeas: ContentIdea[];
   setContentIdeas: (ideas: ContentIdea[]) => void;
+  addCustomContentIdea: (idea: ContentIdea) => void;
   publishContent: (id: string) => void;
   landingPage: LandingPage;
   updateLandingPage: (page: Partial<LandingPage>) => void;
@@ -168,8 +176,25 @@ export const MarketingToolProvider: React.FC<{ children: React.ReactNode }> = ({
     return "Various businesses across multiple sectors";
   };
 
+  // Add new custom entity functions
   const addCustomICP = (icp: ICP) => {
-    setICPs([...icps, { ...icp, isCustomAdded: true }]);
+    setICPs([...icps, { ...icp, id: `custom-${Date.now()}`, isCustomAdded: true }]);
+  };
+
+  const addCustomUSP = (usp: USP) => {
+    setUSPs([...usps, { ...usp, id: `custom-${Date.now()}`, isCustomAdded: true }]);
+  };
+
+  const addCustomGeography = (geo: Geography) => {
+    setGeographies([...geographies, { ...geo, id: `custom-${Date.now()}`, isCustomAdded: true }]);
+  };
+
+  const addCustomKeyword = (keyword: Keyword) => {
+    setKeywords([...keywords, { ...keyword, id: `custom-${Date.now()}`, isCustomAdded: true }]);
+  };
+
+  const addCustomContentIdea = (idea: ContentIdea) => {
+    setContentIdeas([...contentIdeas, { ...idea, id: `custom-${Date.now()}`, isCustomAdded: true, published: false }]);
   };
 
   const publishContent = (id: string) => {
@@ -209,12 +234,16 @@ export const MarketingToolProvider: React.FC<{ children: React.ReactNode }> = ({
         addCustomICP,
         usps,
         setUSPs,
+        addCustomUSP,
         geographies,
         setGeographies,
+        addCustomGeography,
         keywords,
         setKeywords,
+        addCustomKeyword,
         contentIdeas,
         setContentIdeas,
+        addCustomContentIdea,
         publishContent,
         landingPage,
         updateLandingPage,

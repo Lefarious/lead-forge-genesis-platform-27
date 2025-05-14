@@ -1,12 +1,15 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, Search, Plus } from 'lucide-react';
 import { Keyword } from '@/contexts/MarketingToolContext';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const mockGenerateKeywords = (business: any, icps: any[], usps: any[], geos: any[]): Promise<Keyword[]> => {
   return new Promise(resolve => {
@@ -28,54 +31,6 @@ const mockGenerateKeywords = (business: any, icps: any[], usps: any[], geos: any
           relevance: 'Medium',
           relatedICP: 'Mid-Market Operations Managers',
         },
-        {
-          id: '3',
-          term: 'workflow integration platform',
-          searchVolume: '3,600/mo',
-          difficulty: 'Medium',
-          relevance: 'High',
-          relatedICP: 'Enterprise IT Decision Makers',
-        },
-        {
-          id: '4',
-          term: 'no-code automation tool',
-          searchVolume: '8,800/mo',
-          difficulty: 'Medium',
-          relevance: 'High',
-          relatedICP: 'Startup Founders',
-        },
-        {
-          id: '5',
-          term: 'enterprise workflow management',
-          searchVolume: '4,100/mo',
-          difficulty: 'Medium-High',
-          relevance: 'High',
-          relatedICP: 'Enterprise IT Decision Makers',
-        },
-        {
-          id: '6',
-          term: 'business automation ROI',
-          searchVolume: '2,700/mo',
-          difficulty: 'Low',
-          relevance: 'Medium',
-          relatedICP: 'Mid-Market Operations Managers',
-        },
-        {
-          id: '7',
-          term: 'startup automation tools',
-          searchVolume: '5,900/mo',
-          difficulty: 'Medium',
-          relevance: 'High',
-          relatedICP: 'Startup Founders',
-        },
-        {
-          id: '8',
-          term: 'AI-powered business automation',
-          searchVolume: '3,300/mo',
-          difficulty: 'Medium',
-          relevance: 'High',
-          relatedICP: 'Enterprise IT Decision Makers',
-        },
       ]);
     }, 2000);
   });
@@ -94,19 +49,50 @@ const getRelevanceColor = (relevance: string) => {
 };
 
 const KeywordStep: React.FC = () => {
-  const { business, icps, usps, geographies, keywords, setKeywords, setCurrentStep, isGenerating, setIsGenerating } = useMarketingTool();
+  const { 
+    business, icps, usps, geographies, keywords, setKeywords, addCustomKeyword, 
+    setCurrentStep, isGenerating, setIsGenerating 
+  } = useMarketingTool();
+  
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [newKeyword, setNewKeyword] = useState<Partial<Keyword>>({
+    term: '',
+    searchVolume: '',
+    difficulty: 'Medium',
+    relevance: 'Medium',
+    relatedICP: icps.length > 0 ? icps[0].title : '',
+  });
 
   const handleGenerateKeywords = async () => {
     setIsGenerating(true);
     try {
       const generatedKeywords = await mockGenerateKeywords(business, icps, usps, geographies);
-      setKeywords(generatedKeywords);
+      setKeywords([...keywords, ...generatedKeywords]); // Append new keywords
       toast.success('Keywords generated!');
     } catch (error) {
       toast.error('Failed to generate keywords');
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handleAddCustomKeyword = () => {
+    if (!newKeyword.term || !newKeyword.searchVolume || !newKeyword.difficulty || 
+        !newKeyword.relevance || !newKeyword.relatedICP) {
+      toast.error('Please fill all fields');
+      return;
+    }
+
+    addCustomKeyword(newKeyword as Keyword);
+    setIsAddDialogOpen(false);
+    setNewKeyword({
+      term: '',
+      searchVolume: '',
+      difficulty: 'Medium',
+      relevance: 'Medium',
+      relatedICP: icps.length > 0 ? icps[0].title : '',
+    });
+    toast.success('Custom keyword added successfully');
   };
 
   const handleContinue = () => {
@@ -180,7 +166,7 @@ const KeywordStep: React.FC = () => {
                   </thead>
                   <tbody>
                     {keywords.map((keyword) => (
-                      <tr key={keyword.id} className="border-b hover:bg-gray-50">
+                      <tr key={keyword.id} className={`border-b hover:bg-gray-50 ${keyword.isCustomAdded ? "bg-marketing-50/30" : ""}`}>
                         <td className="py-3 px-4 font-medium">{keyword.term}</td>
                         <td className="py-3 px-4 text-gray-600">{keyword.searchVolume}</td>
                         <td className="py-3 px-4">
@@ -202,6 +188,25 @@ const KeywordStep: React.FC = () => {
             </CardContent>
           </Card>
           
+          <div className="flex justify-between items-center mb-8">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsAddDialogOpen(true)}
+              className="flex gap-1 items-center"
+            >
+              <Plus className="h-4 w-4" />
+              Add Custom Keyword
+            </Button>
+            <Button 
+              onClick={handleGenerateKeywords} 
+              className="bg-marketing-600 hover:bg-marketing-700"
+              disabled={isGenerating}
+            >
+              {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Generate More Keywords
+            </Button>
+          </div>
+          
           <div className="flex justify-between">
             <Button variant="outline" onClick={() => setCurrentStep(4)}>
               Back
@@ -215,6 +220,96 @@ const KeywordStep: React.FC = () => {
           </div>
         </>
       )}
+
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="sm:max-w-[550px]">
+          <DialogHeader>
+            <DialogTitle>Add Custom Keyword</DialogTitle>
+            <DialogDescription>
+              Add a custom keyword for your SEO and content strategy.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="term" className="text-right">
+                Keyword Term
+              </Label>
+              <Input
+                id="term"
+                value={newKeyword.term}
+                onChange={(e) => setNewKeyword({ ...newKeyword, term: e.target.value })}
+                className="col-span-3"
+                placeholder="e.g., business process automation"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="searchVolume" className="text-right">
+                Search Volume
+              </Label>
+              <Input
+                id="searchVolume"
+                value={newKeyword.searchVolume}
+                onChange={(e) => setNewKeyword({ ...newKeyword, searchVolume: e.target.value })}
+                className="col-span-3"
+                placeholder="e.g., 5,400/mo"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="difficulty" className="text-right">
+                Difficulty
+              </Label>
+              <select
+                id="difficulty"
+                value={newKeyword.difficulty}
+                onChange={(e) => setNewKeyword({ ...newKeyword, difficulty: e.target.value })}
+                className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="Low">Low</option>
+                <option value="Medium-Low">Medium-Low</option>
+                <option value="Medium">Medium</option>
+                <option value="Medium-High">Medium-High</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="relevance" className="text-right">
+                Relevance
+              </Label>
+              <select
+                id="relevance"
+                value={newKeyword.relevance}
+                onChange={(e) => setNewKeyword({ ...newKeyword, relevance: e.target.value })}
+                className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="relatedICP" className="text-right">
+                Related ICP
+              </Label>
+              <select
+                id="relatedICP"
+                value={newKeyword.relatedICP}
+                onChange={(e) => setNewKeyword({ ...newKeyword, relatedICP: e.target.value })}
+                className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {icps.map((icp) => (
+                  <option key={icp.id} value={icp.title}>{icp.title}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddCustomKeyword}>Add Keyword</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
