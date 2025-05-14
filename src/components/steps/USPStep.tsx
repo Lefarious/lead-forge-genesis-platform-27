@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
@@ -31,10 +32,30 @@ const USPStep: React.FC = () => {
     setIsGenerating(true);
     try {
       const generatedUSPs = await generateUSPs(business, icps);
-      setUSPs([...usps, ...generatedUSPs]); // Append new USPs to existing ones
+      setUSPs(generatedUSPs); 
       toast.success('Unique Selling Points generated!');
     } catch (error) {
       toast.error('Failed to generate USPs');
+      console.error(error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleGenerateMoreUSPs = async () => {
+    if (!localStorage.getItem('openai_api_key')) {
+      toast.error('Please set your OpenAI API key first');
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      // Pass existing USPs to ensure we get unique ones, and generate 3 new ones
+      const moreUSPs = await generateUSPs(business, icps, usps);
+      setUSPs([...usps, ...moreUSPs]);
+      toast.success('Additional USPs generated!');
+    } catch (error) {
+      toast.error('Failed to generate additional USPs');
       console.error(error);
     } finally {
       setIsGenerating(false);

@@ -52,7 +52,8 @@ const ICPStep: React.FC = () => {
 
     setIsGenerating(true);
     try {
-      const moreICPs = await generateICPs(business, 2);
+      // Pass in existing ICPs to ensure we get unique ones, and generate 3 new ones
+      const moreICPs = await generateICPs(business, 3, icps);
       setICPs([...icps, ...moreICPs]);
       toast.success('Additional ICPs generated!');
     } catch (error) {

@@ -1,5 +1,5 @@
 import { toast } from '@/components/ui/use-toast';
-import { Business, ICP, USP, Geography } from '@/contexts/MarketingToolContext';
+import { Business, ICP, USP, Geography, Keyword, ContentIdea } from '@/contexts/MarketingToolContext';
 
 // Base LLM request function
 async function makeLLMRequest(prompt: string) {
@@ -80,8 +80,11 @@ async function makeLLMRequest(prompt: string) {
 }
 
 // Generate ICPs based on business info
-export async function generateICPs(business: Business, count = 3): Promise<ICP[]> {
+export async function generateICPs(business: Business, count = 3, existingICPs: ICP[] = []): Promise<ICP[]> {
+  const existingTitles = existingICPs.map(icp => icp.title).join(", ");
   const prompt = `Generate ${count} detailed Ideal Customer Profiles (ICPs) for a ${business.industry} business named "${business.name}" that ${business.description}. Their main problem to solve is "${business.mainProblem}".
+
+  ${existingICPs.length > 0 ? `They already have these ICPs: ${existingTitles}. Generate NEW ones that are different from these.` : ''}
 
   Each ICP should include:
   - A title (e.g., "Enterprise IT Decision Makers")
@@ -152,10 +155,13 @@ export async function generateICPs(business: Business, count = 3): Promise<ICP[]
 }
 
 // Generate USPs based on business and ICPs
-export async function generateUSPs(business: Business, icps: ICP[]): Promise<USP[]> {
+export async function generateUSPs(business: Business, icps: ICP[], existingUSPs: USP[] = []): Promise<USP[]> {
   const icpTitles = icps.map(icp => icp.title).join(", ");
-  const prompt = `Generate 4 Unique Selling Points (USPs) for a ${business.industry} business named "${business.name}" that ${business.description}. 
+  const existingTitles = existingUSPs.map(usp => usp.title).join(", ");
+  const prompt = `Generate 3 Unique Selling Points (USPs) for a ${business.industry} business named "${business.name}" that ${business.description}. 
   Their main problem to solve is "${business.mainProblem}" and they've identified these ideal customer profiles: ${icpTitles}.
+
+  ${existingUSPs.length > 0 ? `They already have these USPs: ${existingTitles}. Generate NEW ones that are different from these.` : ''}
 
   Each USP should include:
   - A title (e.g., "AI-Powered Automation")
@@ -216,9 +222,12 @@ export async function generateUSPs(business: Business, icps: ICP[]): Promise<USP
 }
 
 // Generate Geographies based on business info
-export async function generateGeographies(business: Business): Promise<Geography[]> {
-  const prompt = `Generate 4 target geographical markets for a ${business.industry} business named "${business.name}" that ${business.description}. 
+export async function generateGeographies(business: Business, existingGeographies: Geography[] = []): Promise<Geography[]> {
+  const existingRegions = existingGeographies.map(geo => geo.region).join(", ");
+  const prompt = `Generate 3 target geographical markets for a ${business.industry} business named "${business.name}" that ${business.description}. 
   Their main problem to solve is "${business.mainProblem}".
+
+  ${existingGeographies.length > 0 ? `They already have these regions: ${existingRegions}. Generate NEW ones that are different from these.` : ''}
 
   Each geography should include:
   - A region name (e.g., "North America")
@@ -296,6 +305,143 @@ export async function generateGeographies(business: Business): Promise<Geography
     const errorMessage = error?.message || 'Unknown error occurred';
     console.error('Failed to generate geographies:', errorMessage);
     toast.error(`Failed to generate geographies: ${errorMessage}`);
+    throw error;
+  }
+}
+
+// Generate keywords based on business, ICPs, and USPs
+export async function generateKeywords(business: Business, icps: ICP[], usps: USP[], existingKeywords: Keyword[] = []): Promise<Keyword[]> {
+  const existingTerms = existingKeywords.map(kw => kw.term).join(", ");
+  const prompt = `Generate 3 target keywords for a ${business.industry} business named "${business.name}" that ${business.description}. 
+  Their main problem to solve is "${business.mainProblem}".
+
+  ${existingKeywords.length > 0 ? `They already have these keywords: ${existingTerms}. Generate NEW ones that are different from these.` : ''}
+
+  Each keyword should include:
+  - The term (e.g., "AI Marketing Solutions")
+  - Estimated search volume
+  - Keyword difficulty
+  - Relevance to business
+  - Related ICP
+
+  Format the response as a JSON array with the following structure:
+  [
+    {
+      "id": "1",
+      "term": "Keyword term here",
+      "searchVolume": "Search volume here",
+      "difficulty": "Difficulty level here",
+      "relevance": "Relevance rating here",
+      "relatedICP": "Related ICP here"
+    }
+  ]
+  `;
+
+  try {
+    const response = await makeLLMRequest(prompt);
+    console.log('Keywords response structure:', response);
+    
+    // Get the keywords array
+    let keywordsArray;
+    
+    if (response.Keywords) {
+      console.log('Found Keywords property (capitalized)');
+      keywordsArray = response.Keywords;
+    } else if (response.keywords) {
+      console.log('Found keywords property (lowercase)');
+      keywordsArray = response.keywords;
+    } else if (Array.isArray(response)) {
+      console.log('Response is directly an array');
+      keywordsArray = response;
+    } else {
+      console.error('Could not find keywords array in response. Keys:', Object.keys(response));
+      throw new Error('Invalid response format: Could not find keywords array');
+    }
+    
+    // Ensure we have an array to work with
+    if (!Array.isArray(keywordsArray)) {
+      console.error('Expected an array but got:', typeof keywordsArray, keywordsArray);
+      throw new Error('Invalid response format: Expected an array of keywords');
+    }
+    
+    return keywordsArray.map((keyword: any, index: number) => ({
+      ...keyword,
+      id: keyword.id || `llm-${Date.now()}-${index}`,
+    }));
+  } catch (error: any) {
+    const errorMessage = error?.message || 'Unknown error occurred';
+    console.error('Failed to generate keywords:', errorMessage);
+    toast.error(`Failed to generate keywords: ${errorMessage}`);
+    throw error;
+  }
+}
+
+// Generate content ideas based on business, ICPs, and keywords
+export async function generateContentIdeas(business: Business, icps: ICP[], keywords: Keyword[], existingIdeas: ContentIdea[] = []): Promise<ContentIdea[]> {
+  const existingTitles = existingIdeas.map(idea => idea.title).join(", ");
+  const prompt = `Generate 3 content ideas for a ${business.industry} business named "${business.name}" that ${business.description}. 
+  Their main problem to solve is "${business.mainProblem}".
+
+  ${existingIdeas.length > 0 ? `They already have these content ideas: ${existingTitles}. Generate NEW ones that are different from these.` : ''}
+
+  Each content idea should include:
+  - A catchy title
+  - Content type (e.g., Blog Post, Whitepaper, Case Study)
+  - Target ICP (choose from: ${icps.map(icp => icp.title).join(", ")})
+  - Target keywords (2-3 relevant keywords)
+  - Content outline (3-5 main points)
+  - Estimated value to audience (e.g., High, Medium, Low)
+
+  Format the response as a JSON array with the following structure:
+  [
+    {
+      "id": "1",
+      "title": "Title here",
+      "type": "Content type here",
+      "targetICP": "Target ICP here",
+      "targetKeywords": ["Keyword 1", "Keyword 2"],
+      "outline": ["Point 1", "Point 2", "Point 3"],
+      "estimatedValue": "Value estimation here"
+    }
+  ]
+  `;
+
+  try {
+    const response = await makeLLMRequest(prompt);
+    console.log('Content ideas response structure:', response);
+    
+    // Get the content ideas array
+    let ideasArray;
+    
+    if (response.ContentIdeas) {
+      console.log('Found ContentIdeas property (capitalized)');
+      ideasArray = response.ContentIdeas;
+    } else if (response.contentIdeas) {
+      console.log('Found contentIdeas property (lowercase)');
+      ideasArray = response.contentIdeas;
+    } else if (Array.isArray(response)) {
+      console.log('Response is directly an array');
+      ideasArray = response;
+    } else {
+      console.error('Could not find content ideas array in response. Keys:', Object.keys(response));
+      throw new Error('Invalid response format: Could not find content ideas array');
+    }
+    
+    // Ensure we have an array to work with
+    if (!Array.isArray(ideasArray)) {
+      console.error('Expected an array but got:', typeof ideasArray, ideasArray);
+      throw new Error('Invalid response format: Expected an array of content ideas');
+    }
+    
+    return ideasArray.map((idea: any, index: number) => ({
+      ...idea,
+      id: idea.id || `llm-${Date.now()}-${index}`,
+      published: false,
+    }));
+  } catch (error: any) {
+    const errorMessage = error?.message || 'Unknown error occurred';
+    console.error('Failed to generate content ideas:', errorMessage);
+    toast.error(`Failed to generate content ideas: ${errorMessage}`);
     throw error;
   }
 }
