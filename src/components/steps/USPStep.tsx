@@ -3,58 +3,29 @@ import React from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { USP } from '@/contexts/MarketingToolContext';
-
-const mockGenerateUSPs = (business: any, icps: any[]): Promise<USP[]> => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      resolve([
-        {
-          id: '1',
-          title: 'AI-Powered Automation',
-          description: 'Our platform uses advanced AI to automate complex workflows, reducing manual effort by up to 80%.',
-          targetICP: 'Enterprise IT Decision Makers',
-          valueProposition: 'Save thousands of work hours annually while improving accuracy and compliance.',
-        },
-        {
-          id: '2',
-          title: 'Seamless Integration',
-          description: 'Integrates with over 200 existing business tools with no coding required, offering the most extensive integration capability in the market.',
-          targetICP: 'Mid-Market Operations Managers',
-          valueProposition: 'Eliminate data silos and connect all your systems without expensive development resources.',
-        },
-        {
-          id: '3',
-          title: 'Rapid Implementation',
-          description: 'Get up and running in days, not months, with our guided setup process and templates.',
-          targetICP: 'Startup Founders',
-          valueProposition: 'Achieve immediate ROI without lengthy implementation projects or specialized consultants.',
-        },
-        {
-          id: '4',
-          title: 'Predictive Analytics',
-          description: 'Leverage machine learning models that analyze your data to predict business outcomes and recommend optimizations.',
-          targetICP: 'Enterprise IT Decision Makers',
-          valueProposition: 'Make data-driven decisions that increase revenue and reduce costs through predictive insights.',
-        },
-      ]);
-    }, 2000);
-  });
-};
+import { generateUSPs } from '@/utils/llmUtils';
+import ApiKeyInput from '@/components/common/ApiKeyInput';
 
 const USPStep: React.FC = () => {
   const { business, icps, usps, setUSPs, setCurrentStep, isGenerating, setIsGenerating } = useMarketingTool();
 
   const handleGenerateUSPs = async () => {
+    if (!localStorage.getItem('openai_api_key')) {
+      toast.error('Please set your OpenAI API key first');
+      return;
+    }
+
     setIsGenerating(true);
     try {
-      const generatedUSPs = await mockGenerateUSPs(business, icps);
+      const generatedUSPs = await generateUSPs(business, icps);
       setUSPs(generatedUSPs);
       toast.success('Unique Selling Points generated!');
     } catch (error) {
       toast.error('Failed to generate USPs');
+      console.error(error);
     } finally {
       setIsGenerating(false);
     }
@@ -87,21 +58,24 @@ const USPStep: React.FC = () => {
             <p className="text-gray-600 mb-4">
               Our AI will generate unique selling points tailored to each of your ideal customer profiles.
             </p>
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <Button 
                 onClick={() => setCurrentStep(2)} 
                 variant="outline"
               >
                 Back to ICPs
               </Button>
-              <Button 
-                onClick={handleGenerateUSPs} 
-                className="bg-marketing-600 hover:bg-marketing-700"
-                disabled={isGenerating}
-              >
-                {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Generate USPs
-              </Button>
+              <div className="flex items-center gap-2">
+                <ApiKeyInput />
+                <Button 
+                  onClick={handleGenerateUSPs} 
+                  className="bg-marketing-600 hover:bg-marketing-700"
+                  disabled={isGenerating}
+                >
+                  {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Generate USPs
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

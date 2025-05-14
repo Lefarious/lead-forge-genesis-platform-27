@@ -3,62 +3,29 @@ import React from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { Loader2, MapPin } from 'lucide-react';
 import { Geography } from '@/contexts/MarketingToolContext';
-
-const mockGenerateGeographies = (business: any): Promise<Geography[]> => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      resolve([
-        {
-          id: '1',
-          region: 'North America',
-          marketSize: 'Large ($50B+)',
-          growthRate: 'Moderate (5-8% YoY)',
-          competitionLevel: 'High',
-          recommendation: 'Focus on differentiation through advanced features and excellent customer service. Target enterprise clients first.',
-        },
-        {
-          id: '2',
-          region: 'Western Europe',
-          marketSize: 'Medium ($25-50B)',
-          growthRate: 'Steady (4-6% YoY)',
-          competitionLevel: 'Medium',
-          recommendation: 'Emphasize compliance features and multilingual support. Partner with local resellers for faster market entry.',
-        },
-        {
-          id: '3',
-          region: 'Australia & New Zealand',
-          marketSize: 'Small ($5-10B)',
-          growthRate: 'Strong (8-12% YoY)',
-          competitionLevel: 'Low',
-          recommendation: 'Early mover advantage possible. Focus on SMB market with scalable solutions and local cloud hosting.',
-        },
-        {
-          id: '4',
-          region: 'Southeast Asia',
-          marketSize: 'Growing ($10-20B)',
-          growthRate: 'Rapid (15-20% YoY)',
-          competitionLevel: 'Low to Medium',
-          recommendation: 'Long-term growth opportunity. Start with Singapore and Malaysia as entry markets. Mobile-first approach essential.',
-        },
-      ]);
-    }, 2000);
-  });
-};
+import { generateGeographies } from '@/utils/llmUtils';
+import ApiKeyInput from '@/components/common/ApiKeyInput';
 
 const GeographyStep: React.FC = () => {
   const { business, geographies, setGeographies, setCurrentStep, isGenerating, setIsGenerating } = useMarketingTool();
 
   const handleGenerateGeographies = async () => {
+    if (!localStorage.getItem('openai_api_key')) {
+      toast.error('Please set your OpenAI API key first');
+      return;
+    }
+
     setIsGenerating(true);
     try {
-      const generatedGeographies = await mockGenerateGeographies(business);
+      const generatedGeographies = await generateGeographies(business);
       setGeographies(generatedGeographies);
       toast.success('Target geographies generated!');
     } catch (error) {
       toast.error('Failed to generate geographies');
+      console.error(error);
     } finally {
       setIsGenerating(false);
     }
@@ -91,21 +58,24 @@ const GeographyStep: React.FC = () => {
             <p className="text-gray-600 mb-4">
               Our AI will identify promising regions based on market size, growth potential, and competition level.
             </p>
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <Button 
                 onClick={() => setCurrentStep(3)} 
                 variant="outline"
               >
                 Back to USPs
               </Button>
-              <Button 
-                onClick={handleGenerateGeographies} 
-                className="bg-marketing-600 hover:bg-marketing-700"
-                disabled={isGenerating}
-              >
-                {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Generate Geographies
-              </Button>
+              <div className="flex items-center gap-2">
+                <ApiKeyInput />
+                <Button 
+                  onClick={handleGenerateGeographies} 
+                  className="bg-marketing-600 hover:bg-marketing-700"
+                  disabled={isGenerating}
+                >
+                  {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Generate Geographies
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

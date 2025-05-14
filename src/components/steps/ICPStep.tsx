@@ -6,43 +6,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
-import { Loader2, Plus, Edit, Trash } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+import { Loader2, Plus, Edit, Trash, RefreshCw } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ICP } from '@/contexts/MarketingToolContext';
-
-const mockGenerate = (business: any): Promise<ICP[]> => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      resolve([
-        {
-          id: '1',
-          title: 'Enterprise IT Decision Makers',
-          description: 'Senior IT professionals in large companies who make technology purchasing decisions.',
-          demographics: 'Age 35-55, Technical background, 10+ years in IT, Budget authority > $100k',
-          painPoints: ['Legacy system integration challenges', 'Security concerns', 'Budget constraints'],
-          goals: ['Improve operational efficiency', 'Reduce IT maintenance costs', 'Enhance security posture'],
-        },
-        {
-          id: '2',
-          title: 'Mid-Market Operations Managers',
-          description: 'Operations leaders in medium-sized businesses looking to optimize processes.',
-          demographics: 'Age 30-45, Operations background, 5+ years management experience',
-          painPoints: ['Manual processes causing bottlenecks', 'Lack of visibility into operations', 'Growing too fast for current systems'],
-          goals: ['Automate routine tasks', 'Get better reporting and analytics', 'Scale operations without adding headcount'],
-        },
-        {
-          id: '3',
-          title: 'Startup Founders',
-          description: 'Founders of early-stage companies looking to establish efficient systems from the start.',
-          demographics: 'Age 25-40, Entrepreneurial, Tech-savvy, Limited budget',
-          painPoints: ['Limited resources', 'Need for rapid scaling', 'Competing priorities'],
-          goals: ['Get to market quickly', 'Establish efficient processes early', 'Maximize limited resources'],
-        },
-      ]);
-    }, 2000);
-  });
-};
+import { generateICPs } from '@/utils/llmUtils';
+import ApiKeyInput from '@/components/common/ApiKeyInput';
 
 const ICPStep: React.FC = () => {
   const { business, icps, setICPs, addCustomICP, setCurrentStep, isGenerating, setIsGenerating } = useMarketingTool();
@@ -57,13 +26,38 @@ const ICPStep: React.FC = () => {
   });
 
   const handleGenerateICPs = async () => {
+    if (!localStorage.getItem('openai_api_key')) {
+      toast.error('Please set your OpenAI API key first');
+      return;
+    }
+
     setIsGenerating(true);
     try {
-      const generatedICPs = await mockGenerate(business);
+      const generatedICPs = await generateICPs(business);
       setICPs(generatedICPs);
       toast.success('Ideal Customer Profiles generated!');
     } catch (error) {
       toast.error('Failed to generate ICPs');
+      console.error(error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleGenerateMoreICPs = async () => {
+    if (!localStorage.getItem('openai_api_key')) {
+      toast.error('Please set your OpenAI API key first');
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const moreICPs = await generateICPs(business, 2);
+      setICPs([...icps, ...moreICPs]);
+      toast.success('Additional ICPs generated!');
+    } catch (error) {
+      toast.error('Failed to generate additional ICPs');
+      console.error(error);
     } finally {
       setIsGenerating(false);
     }
@@ -111,7 +105,6 @@ const ICPStep: React.FC = () => {
     };
 
     if (editingICP) {
-      // Create a new array instead of using a function updater
       const updatedICPs = icps.map(icp => 
         icp.id === editingICP.id ? { ...cleanedFormData, id: editingICP.id } : icp
       );
@@ -149,7 +142,6 @@ const ICPStep: React.FC = () => {
   };
 
   const handleDelete = (id: string) => {
-    // Create a new array instead of using a function updater
     const filteredICPs = icps.filter(icp => icp.id !== id);
     setICPs(filteredICPs);
     toast.success('ICP removed');
@@ -183,21 +175,24 @@ const ICPStep: React.FC = () => {
               Our AI will generate suggested ICPs based on your business details. You can customize these later.
             </p>
           </CardContent>
-          <CardFooter className="flex justify-between">
+          <CardFooter className="flex justify-between items-center">
             <Button 
               onClick={() => setCurrentStep(1)} 
               variant="outline"
             >
               Back to Business Info
             </Button>
-            <Button 
-              onClick={handleGenerateICPs} 
-              className="bg-marketing-600 hover:bg-marketing-700"
-              disabled={isGenerating}
-            >
-              {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Generate ICPs
-            </Button>
+            <div className="flex items-center gap-2">
+              <ApiKeyInput />
+              <Button 
+                onClick={handleGenerateICPs} 
+                className="bg-marketing-600 hover:bg-marketing-700"
+                disabled={isGenerating}
+              >
+                {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Generate ICPs
+              </Button>
+            </div>
           </CardFooter>
         </Card>
       ) : (
@@ -243,6 +238,20 @@ const ICPStep: React.FC = () => {
                 </CardContent>
               </Card>
             ))}
+            
+            <Button 
+              variant="outline"
+              className="border-dashed border-2 border-gray-300 hover:border-marketing-400 flex flex-col items-center justify-center min-h-[200px] p-6"
+              onClick={handleGenerateMoreICPs}
+              disabled={isGenerating}
+            >
+              {isGenerating ? (
+                <Loader2 className="h-12 w-12 text-gray-400 mb-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-12 w-12 text-gray-400 mb-4" />
+              )}
+              <p className="text-gray-600 font-medium">Generate More ICPs</p>
+            </Button>
             
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
@@ -377,12 +386,15 @@ const ICPStep: React.FC = () => {
             <Button variant="outline" onClick={() => setCurrentStep(1)}>
               Back
             </Button>
-            <Button 
-              onClick={handleContinue} 
-              className="bg-marketing-600 hover:bg-marketing-700"
-            >
-              Continue to USPs
-            </Button>
+            <div className="flex items-center gap-2">
+              <ApiKeyInput />
+              <Button 
+                onClick={handleContinue} 
+                className="bg-marketing-600 hover:bg-marketing-700"
+              >
+                Continue to USPs
+              </Button>
+            </div>
           </div>
         </>
       )}
