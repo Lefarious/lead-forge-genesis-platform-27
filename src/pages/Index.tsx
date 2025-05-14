@@ -1,13 +1,49 @@
-// Update this page (the content is just a fallback if you fail to update the page)
 
-const Index = () => {
+import React from 'react';
+import { MarketingToolProvider, useMarketingTool } from '@/contexts/MarketingToolContext';
+import AppLayout from '@/components/layout/AppLayout';
+import BusinessInfoStep from '@/components/steps/BusinessInfoStep';
+import ICPStep from '@/components/steps/ICPStep';
+import USPStep from '@/components/steps/USPStep';
+import GeographyStep from '@/components/steps/GeographyStep';
+import KeywordStep from '@/components/steps/KeywordStep';
+import ContentStep from '@/components/steps/ContentStep';
+import PublishStep from '@/components/steps/PublishStep';
+
+const StepRenderer: React.FC = () => {
+  const { currentStep } = useMarketingTool();
+
+  const renderStep = () => {
+    switch (currentStep) {
+      case 1:
+        return <BusinessInfoStep />;
+      case 2:
+        return <ICPStep />;
+      case 3:
+        return <USPStep />;
+      case 4:
+        return <GeographyStep />;
+      case 5:
+        return <KeywordStep />;
+      case 6:
+        return <ContentStep />;
+      case 7:
+        return <PublishStep />;
+      default:
+        return <BusinessInfoStep />;
+    }
+  };
+
+  return renderStep();
+};
+
+const Index: React.FC = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
-      </div>
-    </div>
+    <MarketingToolProvider>
+      <AppLayout>
+        <StepRenderer />
+      </AppLayout>
+    </MarketingToolProvider>
   );
 };
 
