@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,7 @@ import { Loader2, Plus, RefreshCw } from 'lucide-react';
 import { USP } from '@/contexts/MarketingToolContext';
 import { generateUSPs } from '@/utils/llmUtils';
 import ApiKeyInput from '@/components/common/ApiKeyInput';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
