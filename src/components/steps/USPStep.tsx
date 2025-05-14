@@ -4,7 +4,7 @@ import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/use-toast';
-import { Loader2, Plus } from 'lucide-react';
+import { Loader2, Plus, RefreshCw } from 'lucide-react';
 import { USP } from '@/contexts/MarketingToolContext';
 import { generateUSPs } from '@/utils/llmUtils';
 import ApiKeyInput from '@/components/common/ApiKeyInput';
@@ -97,7 +97,7 @@ const USPStep: React.FC = () => {
                 <ApiKeyInput />
                 <Button 
                   onClick={handleGenerateUSPs} 
-                  className="bg-marketing-600 hover:bg-marketing-700"
+                  className="bg-marketing-600 hover:bg-marketing-700 transition-colors"
                   disabled={isGenerating}
                 >
                   {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -129,22 +129,30 @@ const USPStep: React.FC = () => {
             ))}
           </div>
           
-          <div className="flex justify-between items-center mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Card className="border-dashed border-2 border-gray-300 hover:border-marketing-400 cursor-pointer flex flex-col items-center justify-center min-h-[200px]">
+                  <CardContent className="flex flex-col items-center justify-center p-6">
+                    <Plus className="h-12 w-12 text-gray-400 mb-4" />
+                    <p className="text-gray-600 font-medium">Add Custom USP</p>
+                  </CardContent>
+                </Card>
+              </DialogTrigger>
+            </Dialog>
+
             <Button 
-              variant="outline" 
-              onClick={() => setIsAddDialogOpen(true)}
-              className="flex gap-1 items-center"
-            >
-              <Plus className="h-4 w-4" />
-              Add Custom USP
-            </Button>
-            <Button 
-              onClick={handleGenerateUSPs} 
-              className="bg-marketing-600 hover:bg-marketing-700"
+              variant="outline"
+              className="border-dashed border-2 border-gray-300 hover:border-marketing-400 flex flex-col items-center justify-center min-h-[200px] p-6"
+              onClick={handleGenerateUSPs}
               disabled={isGenerating}
             >
-              {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Generate More USPs
+              {isGenerating ? (
+                <Loader2 className="h-12 w-12 text-gray-400 mb-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-12 w-12 text-gray-400 mb-4" />
+              )}
+              <p className="text-gray-600 font-medium">Generate More USPs</p>
             </Button>
           </div>
           
@@ -154,7 +162,7 @@ const USPStep: React.FC = () => {
             </Button>
             <Button 
               onClick={handleContinue} 
-              className="bg-marketing-600 hover:bg-marketing-700"
+              className="bg-marketing-600 hover:bg-marketing-700 transition-colors"
             >
               Continue to Geographies
             </Button>
@@ -224,7 +232,12 @@ const USPStep: React.FC = () => {
             <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAddCustomUSP}>Add USP</Button>
+            <Button 
+              onClick={handleAddCustomUSP}
+              className="bg-marketing-600 hover:bg-marketing-700 transition-colors"
+            >
+              Add USP
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

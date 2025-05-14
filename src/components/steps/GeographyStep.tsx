@@ -4,11 +4,11 @@ import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/use-toast';
-import { Loader2, MapPin, Plus } from 'lucide-react';
+import { Loader2, MapPin, Plus, RefreshCw } from 'lucide-react';
 import { Geography } from '@/contexts/MarketingToolContext';
 import { generateGeographies } from '@/utils/llmUtils';
 import ApiKeyInput from '@/components/common/ApiKeyInput';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -111,7 +111,7 @@ const GeographyStep: React.FC = () => {
                 <ApiKeyInput />
                 <Button 
                   onClick={handleGenerateGeographies} 
-                  className="bg-marketing-600 hover:bg-marketing-700"
+                  className="bg-marketing-600 hover:bg-marketing-700 transition-colors"
                   disabled={isGenerating}
                 >
                   {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -153,22 +153,30 @@ const GeographyStep: React.FC = () => {
             ))}
           </div>
           
-          <div className="flex justify-between items-center mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Card className="border-dashed border-2 border-gray-300 hover:border-marketing-400 cursor-pointer flex flex-col items-center justify-center min-h-[200px]">
+                  <CardContent className="flex flex-col items-center justify-center p-6">
+                    <Plus className="h-12 w-12 text-gray-400 mb-4" />
+                    <p className="text-gray-600 font-medium">Add Custom Geography</p>
+                  </CardContent>
+                </Card>
+              </DialogTrigger>
+            </Dialog>
+            
             <Button 
-              variant="outline" 
-              onClick={() => setIsAddDialogOpen(true)}
-              className="flex gap-1 items-center hover:bg-marketing-100 hover:text-marketing-700 transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              Add Custom Geography
-            </Button>
-            <Button 
-              onClick={handleGenerateGeographies} 
-              className="bg-marketing-600 hover:bg-marketing-700 transition-colors"
+              variant="outline"
+              className="border-dashed border-2 border-gray-300 hover:border-marketing-400 flex flex-col items-center justify-center min-h-[200px] p-6"
+              onClick={handleGenerateGeographies}
               disabled={isGenerating}
             >
-              {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Generate More Geographies
+              {isGenerating ? (
+                <Loader2 className="h-12 w-12 text-gray-400 mb-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-12 w-12 text-gray-400 mb-4" />
+              )}
+              <p className="text-gray-600 font-medium">Generate More Geographies</p>
             </Button>
           </div>
           
