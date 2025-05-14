@@ -139,7 +139,7 @@ export const MarketingToolProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const addCustomICP = (icp: ICP) => {
-    setICPs(prev => [...prev, { ...icp, isCustomAdded: true }]);
+    setICPs([...icps, { ...icp, isCustomAdded: true }]);
   };
 
   const publishContent = (id: string) => {
