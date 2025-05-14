@@ -2,16 +2,38 @@
 import React from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 type AppLayoutProps = {
   children: React.ReactNode;
 };
 
 const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
-  const { currentStep, setCurrentStep } = useMarketingTool();
+  const { currentStep, setCurrentStep, business } = useMarketingTool();
+
+  const canNavigateToStep = (stepIndex: number): boolean => {
+    // Always allow navigation to current or previous steps
+    if (stepIndex <= currentStep) return true;
+    
+    // Check dependencies for each step
+    if (stepIndex > 1) {
+      // Step 2 (ICP) requires business info to be filled out
+      if (stepIndex >= 2 && (!business.name || !business.industry || !business.description)) {
+        return false;
+      }
+    }
+    
+    // Can only navigate one step ahead
+    return stepIndex <= currentStep + 1;
+  };
 
   const handleStepClick = (stepIndex: number) => {
-    setCurrentStep(stepIndex);
+    if (canNavigateToStep(stepIndex)) {
+      setCurrentStep(stepIndex);
+    } else {
+      // Show toast message indicating why navigation is blocked
+      toast.error('Please complete the previous step first');
+    }
   };
 
   return (
@@ -23,22 +45,31 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               Gen AI
             </div>
             <div className="hidden md:flex ml-10 gap-2">
-              {steps.map((step, index) => (
-                <button 
-                  key={index}
-                  onClick={() => handleStepClick(index + 1)}
-                  className={cn(
-                    "px-3 py-1 rounded-md text-sm font-medium transition-colors cursor-pointer hover:bg-marketing-50",
-                    currentStep === index + 1 
-                      ? "bg-marketing-100 text-marketing-700" 
-                      : currentStep > index + 1 
-                        ? "text-gray-700" 
-                        : "text-gray-400"
-                  )}
-                >
-                  {index + 1}. {step}
-                </button>
-              ))}
+              {steps.map((step, index) => {
+                const stepNumber = index + 1;
+                const isClickable = canNavigateToStep(stepNumber);
+                
+                return (
+                  <button 
+                    key={index}
+                    onClick={() => handleStepClick(stepNumber)}
+                    disabled={!isClickable}
+                    title={!isClickable ? "Complete previous steps first" : step}
+                    className={cn(
+                      "px-3 py-1 rounded-md text-sm font-medium transition-colors",
+                      currentStep === stepNumber 
+                        ? "bg-marketing-100 text-marketing-700" 
+                        : currentStep > stepNumber 
+                          ? "text-gray-700 hover:bg-marketing-50" 
+                          : isClickable
+                            ? "text-gray-600 hover:bg-marketing-50"
+                            : "text-gray-400 cursor-not-allowed opacity-60"
+                    )}
+                  >
+                    {stepNumber}. {step}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
