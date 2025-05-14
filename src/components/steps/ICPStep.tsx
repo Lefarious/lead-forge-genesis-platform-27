@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
@@ -111,7 +110,8 @@ const ICPStep: React.FC = () => {
     };
 
     if (editingICP) {
-      setICPs(prev => prev.map(icp => 
+      // Fix type error by providing explicit ICP[] type
+      setICPs((prev: ICP[]) => prev.map(icp => 
         icp.id === editingICP.id ? { ...cleanedFormData, id: editingICP.id } : icp
       ));
       toast.success('ICP updated successfully!');
@@ -147,7 +147,8 @@ const ICPStep: React.FC = () => {
   };
 
   const handleDelete = (id: string) => {
-    setICPs(prev => prev.filter(icp => icp.id !== id));
+    // Fix type error by providing explicit ICP[] type
+    setICPs((prev: ICP[]) => prev.filter(icp => icp.id !== id));
     toast.success('ICP removed');
   };
 

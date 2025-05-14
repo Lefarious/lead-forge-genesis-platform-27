@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,22 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+
+// Move this function outside of the component to make it available to all components in the file
+const contentTypeIcon = (type: string) => {
+  switch (type.toLowerCase()) {
+    case 'white paper':
+      return <FileText className="h-5 w-5 text-blue-600" />;
+    case 'blog post':
+      return <PenTool className="h-5 w-5 text-green-600" />;
+    case 'ebook':
+      return <BookOpen className="h-5 w-5 text-purple-600" />;
+    case 'webinar':
+      return <BookmarkCheck className="h-5 w-5 text-red-600" />;
+    default:
+      return <FileText className="h-5 w-5 text-gray-600" />;
+  }
+};
 
 const mockGenerateContent = (business: any, icps: any[], keywords: any[]): Promise<ContentIdea[]> => {
   return new Promise(resolve => {
@@ -153,21 +168,6 @@ const ContentStep: React.FC = () => {
     if (selectedTab === 'all') return contentIdeas;
     if (selectedTab === 'published') return contentIdeas.filter(item => item.published);
     return contentIdeas.filter(item => !item.published);
-  };
-
-  const contentTypeIcon = (type: string) => {
-    switch (type.toLowerCase()) {
-      case 'white paper':
-        return <FileText className="h-5 w-5 text-blue-600" />;
-      case 'blog post':
-        return <PenTool className="h-5 w-5 text-green-600" />;
-      case 'ebook':
-        return <BookOpen className="h-5 w-5 text-purple-600" />;
-      case 'webinar':
-        return <BookmarkCheck className="h-5 w-5 text-red-600" />;
-      default:
-        return <FileText className="h-5 w-5 text-gray-600" />;
-    }
   };
 
   const handleContinue = () => {

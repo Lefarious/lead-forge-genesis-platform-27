@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { copy } from 'lucide-react';
+import { Copy } from 'lucide-react';
 import { ContentIdea, LandingPage } from '@/contexts/MarketingToolContext';
 
 const PublishStep: React.FC = () => {
@@ -158,7 +157,7 @@ const PublishStep: React.FC = () => {
                         onClick={() => copyShareLink(content)}
                         className="flex items-center gap-1"
                       >
-                        <copy className="h-4 w-4" />
+                        <Copy className="h-4 w-4" />
                         Copy Link
                       </Button>
                     </div>
