@@ -56,11 +56,22 @@ async function makeLLMRequest(prompt: string) {
     const data = await response.json();
     console.log('API response received successfully');
     
+    // Extract content from the response
+    const content = data.choices[0].message.content;
+    console.log('Raw response content:', content);
+    
     try {
-      const parsed = JSON.parse(data.choices[0].message.content);
+      // Parse the JSON content
+      const parsed = JSON.parse(content);
+      console.log('Parsed response:', parsed);
       return parsed;
     } catch (parseError) {
-      console.error('Failed to parse response as JSON:', data.choices[0].message.content);
+      // If we can use the content directly (it's already parsed by response.json())
+      if (typeof content === 'object') {
+        console.log('Content is already an object, using directly');
+        return content;
+      }
+      console.error('Failed to parse response as JSON:', content);
       throw new Error('Failed to parse AI response as JSON');
     }
   } catch (error) {
@@ -94,10 +105,25 @@ export async function generateICPs(business: Business, count = 3): Promise<ICP[]
   `;
 
   try {
-    const icps = await makeLLMRequest(prompt);
-    return icps.map((icp: any, index: number) => ({
+    const response = await makeLLMRequest(prompt);
+    console.log('ICP response structure:', response);
+    
+    // Check if the response has an "icps" property (array wrapper)
+    const icpsArray = response.icps || response;
+    
+    // Ensure we have an array to work with
+    if (!Array.isArray(icpsArray)) {
+      console.error('Expected an array but got:', typeof icpsArray, icpsArray);
+      throw new Error('Invalid response format: Expected an array of ICPs');
+    }
+    
+    return icpsArray.map((icp: any, index: number) => ({
       ...icp,
       id: icp.id || `llm-${Date.now()}-${index}`,
+      // Ensure demographics is a string if it's an object
+      demographics: typeof icp.demographics === 'object' 
+        ? JSON.stringify(icp.demographics) 
+        : icp.demographics,
     }));
   } catch (error: any) {
     const errorMessage = error?.message || 'Unknown error occurred';
@@ -132,8 +158,19 @@ export async function generateUSPs(business: Business, icps: ICP[]): Promise<USP
   `;
 
   try {
-    const usps = await makeLLMRequest(prompt);
-    return usps.map((usp: any, index: number) => ({
+    const response = await makeLLMRequest(prompt);
+    console.log('USP response structure:', response);
+    
+    // Check if the response has a "usps" property (array wrapper)
+    const uspsArray = response.usps || response;
+    
+    // Ensure we have an array to work with
+    if (!Array.isArray(uspsArray)) {
+      console.error('Expected an array but got:', typeof uspsArray, uspsArray);
+      throw new Error('Invalid response format: Expected an array of USPs');
+    }
+    
+    return uspsArray.map((usp: any, index: number) => ({
       ...usp,
       id: usp.id || `llm-${Date.now()}-${index}`,
     }));
@@ -171,8 +208,19 @@ export async function generateGeographies(business: Business): Promise<Geography
   `;
 
   try {
-    const geographies = await makeLLMRequest(prompt);
-    return geographies.map((geo: any, index: number) => ({
+    const response = await makeLLMRequest(prompt);
+    console.log('Geography response structure:', response);
+    
+    // Check if the response has a "geographies" property (array wrapper)
+    const geographiesArray = response.geographies || response;
+    
+    // Ensure we have an array to work with
+    if (!Array.isArray(geographiesArray)) {
+      console.error('Expected an array but got:', typeof geographiesArray, geographiesArray);
+      throw new Error('Invalid response format: Expected an array of geographies');
+    }
+    
+    return geographiesArray.map((geo: any, index: number) => ({
       ...geo,
       id: geo.id || `llm-${Date.now()}-${index}`,
     }));
