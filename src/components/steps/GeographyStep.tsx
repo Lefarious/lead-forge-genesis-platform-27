@@ -3,7 +3,7 @@ import React from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/use-toast';
 import { Loader2, MapPin } from 'lucide-react';
 import { Geography } from '@/contexts/MarketingToolContext';
 import { generateGeographies } from '@/utils/llmUtils';

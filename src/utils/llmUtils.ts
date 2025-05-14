@@ -1,5 +1,5 @@
 
-import { toast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/use-toast';
 import { Business, ICP, USP, Geography } from '@/contexts/MarketingToolContext';
 
 // Base LLM request function
