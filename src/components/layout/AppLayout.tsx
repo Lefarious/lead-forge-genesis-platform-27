@@ -16,7 +16,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         <div className="container flex justify-between items-center">
           <div className="flex items-center">
             <div className="font-bold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-marketing-600 to-marketing-800">
-              MarketGen
+              Gen AI
             </div>
             <div className="hidden md:flex ml-10 gap-2">
               {steps.map((step, index) => (
@@ -36,9 +36,6 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               ))}
             </div>
           </div>
-          <div className="text-sm text-gray-500">
-            Your Marketing Research Tool
-          </div>
         </div>
       </header>
       <main className="flex-1">
@@ -46,7 +43,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       </main>
       <footer className="bg-white border-t py-4">
         <div className="container text-center text-sm text-gray-500">
-          &copy; {new Date().getFullYear()} MarketGen. All rights reserved.
+          &copy; {new Date().getFullYear()} Gen AI. All rights reserved.
         </div>
       </footer>
     </div>
