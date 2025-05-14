@@ -8,7 +8,11 @@ type AppLayoutProps = {
 };
 
 const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
-  const { currentStep } = useMarketingTool();
+  const { currentStep, setCurrentStep } = useMarketingTool();
+
+  const handleStepClick = (stepIndex: number) => {
+    setCurrentStep(stepIndex);
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-gray-100">
@@ -20,10 +24,11 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             </div>
             <div className="hidden md:flex ml-10 gap-2">
               {steps.map((step, index) => (
-                <div 
+                <button 
                   key={index}
+                  onClick={() => handleStepClick(index + 1)}
                   className={cn(
-                    "px-3 py-1 rounded-md text-sm font-medium transition-colors",
+                    "px-3 py-1 rounded-md text-sm font-medium transition-colors cursor-pointer hover:bg-marketing-50",
                     currentStep === index + 1 
                       ? "bg-marketing-100 text-marketing-700" 
                       : currentStep > index + 1 
@@ -32,7 +37,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                   )}
                 >
                   {index + 1}. {step}
-                </div>
+                </button>
               ))}
             </div>
           </div>
