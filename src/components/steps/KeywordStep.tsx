@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,9 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-interface KeywordStepProps {
-  autoGenerate?: boolean;
-}
+interface KeywordStepProps {}
 
 const mockGenerateKeywords = (business: any, icps: any[], usps: any[], geos: any[]): Promise<Keyword[]> => {
   return new Promise(resolve => {
@@ -51,7 +49,7 @@ const getRelevanceColor = (relevance: string) => {
   return 'bg-blue-100 text-blue-800';
 };
 
-const KeywordStep: React.FC<KeywordStepProps> = ({ autoGenerate = false }) => {
+const KeywordStep: React.FC<KeywordStepProps> = () => {
   const { 
     business, icps, usps, geographies, keywords, setKeywords, addCustomKeyword, 
     setCurrentStep, isGenerating, setIsGenerating 
@@ -78,13 +76,6 @@ const KeywordStep: React.FC<KeywordStepProps> = ({ autoGenerate = false }) => {
       setIsGenerating(false);
     }
   };
-
-  // Auto-generate on first visit
-  useEffect(() => {
-    if (autoGenerate && keywords.length === 0 && localStorage.getItem('openai_api_key') && !isGenerating) {
-      handleGenerateKeywords();
-    }
-  }, [autoGenerate]);
 
   const handleAddCustomKeyword = () => {
     if (!newKeyword.term || !newKeyword.searchVolume || !newKeyword.difficulty || 

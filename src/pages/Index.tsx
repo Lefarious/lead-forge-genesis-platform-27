@@ -11,19 +11,14 @@ import ContentStep from '@/components/steps/ContentStep';
 import PublishStep from '@/components/steps/PublishStep';
 
 const StepRenderer: React.FC = () => {
-  const { currentStep, icps, usps, geographies, keywords, contentIdeas } = useMarketingTool();
+  const { currentStep } = useMarketingTool();
   
-  // Track visited steps to auto-generate on first visit
+  // Track visited steps but don't auto-generate anymore
   const visitedSteps = useRef<Set<number>>(new Set([1])); // Consider first step as visited
 
+  // Add to visited steps when step is rendered
   useEffect(() => {
-    // If this step hasn't been visited before and isn't step 1 (Business Info)
-    if (!visitedSteps.current.has(currentStep) && currentStep > 1) {
-      visitedSteps.current.add(currentStep);
-      
-      // Get step element and find the generate button
-      // This will be handled by each component using their own useEffect
-    }
+    visitedSteps.current.add(currentStep);
   }, [currentStep]);
 
   const renderStep = () => {
@@ -31,26 +26,21 @@ const StepRenderer: React.FC = () => {
       case 1:
         return <BusinessInfoStep />;
       case 2:
-        return <ICPStep autoGenerate={!visitedSteps.current.has(2)} />;
+        return <ICPStep />;
       case 3:
-        return <USPStep autoGenerate={!visitedSteps.current.has(3)} />;
+        return <USPStep />;
       case 4:
-        return <GeographyStep autoGenerate={!visitedSteps.current.has(4)} />;
+        return <GeographyStep />;
       case 5:
-        return <KeywordStep autoGenerate={!visitedSteps.current.has(5)} />;
+        return <KeywordStep />;
       case 6:
-        return <ContentStep autoGenerate={!visitedSteps.current.has(6)} />;
+        return <ContentStep />;
       case 7:
         return <PublishStep />;
       default:
         return <BusinessInfoStep />;
     }
   };
-
-  // Add to visited steps when step is rendered
-  useEffect(() => {
-    visitedSteps.current.add(currentStep);
-  }, [currentStep]);
 
   return renderStep();
 };

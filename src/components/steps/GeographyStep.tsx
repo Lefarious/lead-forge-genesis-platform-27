@@ -12,11 +12,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 
-interface GeographyStepProps {
-  autoGenerate?: boolean;
-}
+interface GeographyStepProps {}
 
-const GeographyStep: React.FC<GeographyStepProps> = ({ autoGenerate = false }) => {
+const GeographyStep: React.FC<GeographyStepProps> = () => {
   const { business, geographies, setGeographies, addCustomGeography, setCurrentStep, isGenerating, setIsGenerating } = useMarketingTool();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newGeography, setNewGeography] = useState<Partial<Geography>>({
@@ -56,13 +54,6 @@ const GeographyStep: React.FC<GeographyStepProps> = ({ autoGenerate = false }) =
       setIsGenerating(false);
     }
   };
-
-  // Auto-generate on first visit
-  useEffect(() => {
-    if (autoGenerate && geographies.length === 0 && localStorage.getItem('openai_api_key') && !isGenerating) {
-      handleGenerateGeographies();
-    }
-  }, [autoGenerate]);
 
   const handleAddCustomGeography = () => {
     if (!newGeography.region || !newGeography.marketSize || !newGeography.growthRate || 
