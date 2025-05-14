@@ -4,12 +4,19 @@ import { Business, ICP, USP, Geography } from '@/contexts/MarketingToolContext';
 
 // Base LLM request function
 async function makeLLMRequest(prompt: string) {
+  const apiKey = localStorage.getItem('openai_api_key') || '';
+  if (!apiKey) {
+    throw new Error('API key not found');
+  }
+
   try {
+    console.log('Making API request to OpenAI...');
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('openai_api_key') || ''}`,
+        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
@@ -27,12 +34,32 @@ async function makeLLMRequest(prompt: string) {
       })
     });
 
+    console.log('API response status:', response.status);
+    
     if (!response.ok) {
-      throw new Error(`API request failed with status ${response.status}`);
+      const errorBody = await response.text();
+      console.error('API error response:', errorBody);
+      
+      // Handle common status codes
+      if (response.status === 401) {
+        throw new Error('API key is invalid or expired');
+      } else if (response.status === 429) {
+        throw new Error('Rate limit exceeded. Please try again later');
+      } else {
+        throw new Error(`API request failed with status ${response.status}: ${errorBody}`);
+      }
     }
 
     const data = await response.json();
-    return JSON.parse(data.choices[0].message.content);
+    console.log('API response received successfully');
+    
+    try {
+      const parsed = JSON.parse(data.choices[0].message.content);
+      return parsed;
+    } catch (parseError) {
+      console.error('Failed to parse response as JSON:', data.choices[0].message.content);
+      throw new Error('Failed to parse AI response as JSON');
+    }
   } catch (error) {
     console.error('LLM request failed:', error);
     throw error;
@@ -69,8 +96,10 @@ export async function generateICPs(business: Business, count = 3): Promise<ICP[]
       ...icp,
       id: icp.id || `llm-${Date.now()}-${index}`,
     }));
-  } catch (error) {
-    toast.error('Failed to generate ICPs. Check your API key and try again.');
+  } catch (error: any) {
+    const errorMessage = error?.message || 'Unknown error occurred';
+    console.error('Failed to generate ICPs:', errorMessage);
+    toast.error(`Failed to generate ICPs: ${errorMessage}`);
     throw error;
   }
 }
@@ -105,8 +134,10 @@ export async function generateUSPs(business: Business, icps: ICP[]): Promise<USP
       ...usp,
       id: usp.id || `llm-${Date.now()}-${index}`,
     }));
-  } catch (error) {
-    toast.error('Failed to generate USPs. Check your API key and try again.');
+  } catch (error: any) {
+    const errorMessage = error?.message || 'Unknown error occurred';
+    console.error('Failed to generate USPs:', errorMessage);
+    toast.error(`Failed to generate USPs: ${errorMessage}`);
     throw error;
   }
 }
@@ -142,8 +173,10 @@ export async function generateGeographies(business: Business): Promise<Geography
       ...geo,
       id: geo.id || `llm-${Date.now()}-${index}`,
     }));
-  } catch (error) {
-    toast.error('Failed to generate geographies. Check your API key and try again.');
+  } catch (error: any) {
+    const errorMessage = error?.message || 'Unknown error occurred';
+    console.error('Failed to generate geographies:', errorMessage);
+    toast.error(`Failed to generate geographies: ${errorMessage}`);
     throw error;
   }
 }

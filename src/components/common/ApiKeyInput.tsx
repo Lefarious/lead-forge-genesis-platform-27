@@ -17,6 +17,7 @@ import { Key } from 'lucide-react';
 const ApiKeyInput: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [apiKey, setApiKey] = useState('');
+  const [isValidating, setIsValidating] = useState(false);
   const [hasStoredKey, setHasStoredKey] = useState(false);
 
   useEffect(() => {
@@ -27,13 +28,56 @@ const ApiKeyInput: React.FC = () => {
     }
   }, []);
 
-  const handleSave = () => {
+  const validateApiKey = async (key: string): Promise<boolean> => {
+    try {
+      setIsValidating(true);
+      console.log('Validating API key...');
+      
+      // Make a simple request to the OpenAI API to check if the key is valid
+      const response = await fetch('https://api.openai.com/v1/models', {
+        headers: {
+          'Authorization': `Bearer ${key}`,
+        },
+      });
+      
+      console.log('Validation response status:', response.status);
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('API validation error:', errorData);
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('API key validation error:', error);
+      return false;
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const handleSave = async () => {
     if (!apiKey.trim()) {
       toast.error('Please enter an API key');
       return;
     }
 
-    localStorage.setItem('openai_api_key', apiKey);
+    // Check if the API key starts with "sk-" (standard format for OpenAI keys)
+    if (!apiKey.trim().startsWith('sk-')) {
+      toast.error('Invalid API key format. OpenAI keys should start with "sk-"');
+      return;
+    }
+
+    // Validate the API key
+    const isValid = await validateApiKey(apiKey.trim());
+    
+    if (!isValid) {
+      toast.error('Invalid API key. Please check your key and try again.');
+      return;
+    }
+
+    localStorage.setItem('openai_api_key', apiKey.trim());
     setHasStoredKey(true);
     setIsOpen(false);
     toast.success('API key saved successfully!');
@@ -78,6 +122,9 @@ const ApiKeyInput: React.FC = () => {
                 onChange={(e) => setApiKey(e.target.value)}
                 placeholder="sk-..."
               />
+              <p className="text-xs text-gray-500">
+                API keys must start with "sk-" and should be from OpenAI
+              </p>
             </div>
           </div>
           
@@ -92,8 +139,11 @@ const ApiKeyInput: React.FC = () => {
                 <Button variant="outline" onClick={() => setIsOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleSave}>
-                  Save Key
+                <Button 
+                  onClick={handleSave}
+                  disabled={isValidating}
+                >
+                  {isValidating ? 'Validating...' : 'Save Key'}
                 </Button>
               </div>
             </div>
