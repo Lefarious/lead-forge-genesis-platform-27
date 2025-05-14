@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -13,6 +12,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+
+interface ContentStepProps {
+  autoGenerate?: boolean;
+}
 
 // Move this function outside of the component to make it available to all components in the file
 const contentTypeIcon = (type: string) => {
@@ -74,7 +77,7 @@ const mockGenerateContent = (business: any, icps: any[], keywords: any[]): Promi
   });
 };
 
-const ContentStep: React.FC = () => {
+const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
   const { 
     business, icps, keywords, contentIdeas, setContentIdeas, addCustomContentIdea,
     publishContent, setCurrentStep, isGenerating, setIsGenerating
@@ -110,6 +113,13 @@ const ContentStep: React.FC = () => {
       setIsGenerating(false);
     }
   };
+
+  // Auto-generate on first visit
+  useEffect(() => {
+    if (autoGenerate && contentIdeas.length === 0 && localStorage.getItem('openai_api_key') && !isGenerating) {
+      handleGenerateContent();
+    }
+  }, [autoGenerate]);
 
   const handlePublish = (id: string) => {
     publishContent(id);
@@ -577,7 +587,7 @@ const ContentCard: React.FC<ContentCardProps> = ({ content, onPublish, onEdit })
             <h4 className="text-sm font-medium mb-1">Outline:</h4>
             <ul className="text-sm text-gray-600 pl-5 list-disc">
               {content.outline.slice(0, 3).map((point, idx) => (
-                <li key={idx}>{point}</li>
+                <li key={idx} className="text-sm">{point}</li>
               ))}
               {content.outline.length > 3 && (
                 <li className="text-marketing-600 font-medium">

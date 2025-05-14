@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +12,11 @@ import { ICP } from '@/contexts/MarketingToolContext';
 import { generateICPs } from '@/utils/llmUtils';
 import ApiKeyInput from '@/components/common/ApiKeyInput';
 
-const ICPStep: React.FC = () => {
+interface ICPStepProps {
+  autoGenerate?: boolean;
+}
+
+const ICPStep: React.FC<ICPStepProps> = ({ autoGenerate = false }) => {
   const { business, icps, setICPs, addCustomICP, setCurrentStep, isGenerating, setIsGenerating } = useMarketingTool();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingICP, setEditingICP] = useState<ICP | null>(null);
@@ -63,6 +66,13 @@ const ICPStep: React.FC = () => {
       setIsGenerating(false);
     }
   };
+
+  // Auto-generate on first visit
+  useEffect(() => {
+    if (autoGenerate && icps.length === 0 && localStorage.getItem('openai_api_key') && !isGenerating) {
+      handleGenerateICPs();
+    }
+  }, [autoGenerate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
