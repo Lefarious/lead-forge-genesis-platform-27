@@ -19,7 +19,7 @@ async function makeLLMRequest(prompt: string) {
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: "gpt-4.1",
         messages: [
           {
             role: 'system',
@@ -30,6 +30,9 @@ async function makeLLMRequest(prompt: string) {
             content: prompt
           }
         ],
+        response_format: {
+          "type": "json_object"
+        },
         temperature: 0.7
       })
     });
