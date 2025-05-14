@@ -62,7 +62,7 @@ const mockGenerateContent = (business: any, icps: any[], keywords: any[]): Promi
             'Mapping your current process landscape',
             'Identifying integration priorities',
             'Selecting the right integration approach',
-            'Implementation strategies that won't disrupt operations',
+            'Implementation strategies that won\'t disrupt operations',
             'Measuring success: KPIs for integration projects',
             'Future-proofing your integration architecture'
           ],
@@ -88,7 +88,7 @@ const mockGenerateContent = (business: any, icps: any[], keywords: any[]): Promi
         },
         {
           id: '5',
-          title: 'AI-Powered Business Transformation: A CIO's Guide',
+          title: 'AI-Powered Business Transformation: A CIO\'s Guide',
           type: 'Webinar',
           targetICP: 'Enterprise IT Decision Makers',
           targetKeywords: ['AI-powered business automation', 'enterprise workflow management'],
