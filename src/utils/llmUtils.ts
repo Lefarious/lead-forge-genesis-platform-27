@@ -108,8 +108,27 @@ export async function generateICPs(business: Business, count = 3): Promise<ICP[]
     const response = await makeLLMRequest(prompt);
     console.log('ICP response structure:', response);
     
-    // Check if the response has an "icps" property (array wrapper)
-    const icpsArray = response.icps || response;
+    // Get the ICPs array, which might be directly in the response
+    // or nested under an "ICPs" property
+    let icpsArray;
+    
+    if (response.ICPs) {
+      // Handle capitalized "ICPs" property
+      console.log('Found ICPs property (capitalized)');
+      icpsArray = response.ICPs;
+    } else if (response.icps) {
+      // Handle lowercase "icps" property
+      console.log('Found icps property (lowercase)');
+      icpsArray = response.icps;
+    } else if (Array.isArray(response)) {
+      // Handle direct array response
+      console.log('Response is directly an array');
+      icpsArray = response;
+    } else {
+      // If none of the above, log the response keys to help debugging
+      console.error('Could not find ICPs array in response. Keys:', Object.keys(response));
+      throw new Error('Invalid response format: Could not find ICPs array');
+    }
     
     // Ensure we have an array to work with
     if (!Array.isArray(icpsArray)) {
@@ -161,8 +180,23 @@ export async function generateUSPs(business: Business, icps: ICP[]): Promise<USP
     const response = await makeLLMRequest(prompt);
     console.log('USP response structure:', response);
     
-    // Check if the response has a "usps" property (array wrapper)
-    const uspsArray = response.usps || response;
+    // Get the USPs array, which might be directly in the response
+    // or nested under a "USPs" property (case-insensitive)
+    let uspsArray;
+    
+    if (response.USPs) {
+      console.log('Found USPs property (capitalized)');
+      uspsArray = response.USPs;
+    } else if (response.usps) {
+      console.log('Found usps property (lowercase)');
+      uspsArray = response.usps;
+    } else if (Array.isArray(response)) {
+      console.log('Response is directly an array');
+      uspsArray = response;
+    } else {
+      console.error('Could not find USPs array in response. Keys:', Object.keys(response));
+      throw new Error('Invalid response format: Could not find USPs array');
+    }
     
     // Ensure we have an array to work with
     if (!Array.isArray(uspsArray)) {
@@ -211,8 +245,23 @@ export async function generateGeographies(business: Business): Promise<Geography
     const response = await makeLLMRequest(prompt);
     console.log('Geography response structure:', response);
     
-    // Check if the response has a "geographies" property (array wrapper)
-    const geographiesArray = response.geographies || response;
+    // Get the geographies array, which might be directly in the response
+    // or nested under a "geographies" property (case-insensitive)
+    let geographiesArray;
+    
+    if (response.Geographies) {
+      console.log('Found Geographies property (capitalized)');
+      geographiesArray = response.Geographies;
+    } else if (response.geographies) {
+      console.log('Found geographies property (lowercase)');
+      geographiesArray = response.geographies;
+    } else if (Array.isArray(response)) {
+      console.log('Response is directly an array');
+      geographiesArray = response;
+    } else {
+      console.error('Could not find geographies array in response. Keys:', Object.keys(response));
+      throw new Error('Invalid response format: Could not find geographies array');
+    }
     
     // Ensure we have an array to work with
     if (!Array.isArray(geographiesArray)) {
