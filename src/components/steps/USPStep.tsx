@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
@@ -174,7 +175,7 @@ const USPStep: React.FC<USPStepProps> = ({ autoGenerate = false }) => {
             <Button 
               variant="outline"
               className="border-dashed border-2 border-gray-300 hover:border-marketing-400 flex flex-col items-center justify-center min-h-[200px] p-6"
-              onClick={handleGenerateUSPs}
+              onClick={handleGenerateMoreUSPs}
               disabled={isGenerating}
             >
               {isGenerating ? (
