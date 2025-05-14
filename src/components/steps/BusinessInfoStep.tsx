@@ -14,10 +14,7 @@ const BusinessInfoStep: React.FC = () => {
     name: business.name,
     industry: business.industry,
     description: business.description,
-    targetAudience: business.targetAudience,
     mainProblem: business.mainProblem,
-    mainSolution: business.mainSolution,
-    existingCustomers: business.existingCustomers,
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -94,50 +91,13 @@ const BusinessInfoStep: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="targetAudience">Target Audience</Label>
+              <Label htmlFor="mainProblem">Main Problem You Solve</Label>
               <Textarea
-                id="targetAudience"
-                name="targetAudience"
-                value={formData.targetAudience}
+                id="mainProblem"
+                name="mainProblem"
+                value={formData.mainProblem}
                 onChange={handleInputChange}
-                placeholder="Who are your ideal customers?"
-                rows={2}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="mainProblem">Main Problem You Solve</Label>
-                <Textarea
-                  id="mainProblem"
-                  name="mainProblem"
-                  value={formData.mainProblem}
-                  onChange={handleInputChange}
-                  placeholder="What problem does your business solve?"
-                  rows={2}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mainSolution">Your Solution</Label>
-                <Textarea
-                  id="mainSolution"
-                  name="mainSolution"
-                  value={formData.mainSolution}
-                  onChange={handleInputChange}
-                  placeholder="How does your business solve this problem?"
-                  rows={2}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="existingCustomers">Existing Customer Examples</Label>
-              <Textarea
-                id="existingCustomers"
-                name="existingCustomers"
-                value={formData.existingCustomers}
-                onChange={handleInputChange}
-                placeholder="Describe some of your existing customers (types of companies, job titles, etc.)"
+                placeholder="What problem does your business solve?"
                 rows={2}
               />
             </div>

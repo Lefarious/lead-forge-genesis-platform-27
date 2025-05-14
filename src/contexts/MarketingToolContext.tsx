@@ -127,15 +127,45 @@ export const MarketingToolProvider: React.FC<{ children: React.ReactNode }> = ({
   const [landingPage, setLandingPage] = useState<LandingPage>(defaultLandingPage);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const setBusinessInfo = (info: Business) => {
-    setBusiness(info);
+  const setBusinessInfo = (info: Partial<Business>) => {
+    // Auto-generate missing fields based on provided information
+    const completeInfo = {
+      ...info,
+      targetAudience: generateTargetAudience(info),
+      mainSolution: generateSolution(info),
+      existingCustomers: generateExistingCustomers(info),
+    };
+    
+    setBusiness(prev => ({ ...prev, ...completeInfo }));
     setLandingPage(prev => ({
       ...prev,
-      businessName: info.name,
-      title: `${info.name} - ${info.mainSolution}`,
-      headline: `Discover How ${info.name} Can Transform Your ${info.industry} Experience`,
-      description: `Learn how our solutions help with ${info.mainProblem} and provide ${info.mainSolution} for ${info.targetAudience}.`,
+      businessName: info.name || prev.businessName,
+      title: `${info.name || prev.businessName} - ${completeInfo.mainSolution}`,
+      headline: `Discover How ${info.name || prev.businessName} Can Transform Your ${info.industry || prev.businessName} Experience`,
+      description: `Learn how our solutions help with ${completeInfo.mainProblem} and provide ${completeInfo.mainSolution} for ${completeInfo.targetAudience}.`,
     }));
+  };
+
+  // Helper functions to generate missing fields
+  const generateTargetAudience = (info: Partial<Business>): string => {
+    if (info.industry && info.description) {
+      return `Businesses and professionals in the ${info.industry} industry looking to improve their operations`;
+    }
+    return "Industry professionals and businesses";
+  };
+
+  const generateSolution = (info: Partial<Business>): string => {
+    if (info.mainProblem) {
+      return `Comprehensive ${info.industry || ''} solution that addresses ${info.mainProblem}`;
+    }
+    return "Innovative solutions tailored to industry needs";
+  };
+
+  const generateExistingCustomers = (info: Partial<Business>): string => {
+    if (info.industry) {
+      return `Leading companies in the ${info.industry} industry`;
+    }
+    return "Various businesses across multiple sectors";
   };
 
   const addCustomICP = (icp: ICP) => {
