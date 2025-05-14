@@ -23,8 +23,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       }
     }
     
-    // Can only navigate one step ahead
-    return stepIndex <= currentStep + 1;
+    // Only allow navigation to exactly one step ahead
+    return stepIndex === currentStep + 1;
   };
 
   const handleStepClick = (stepIndex: number) => {
@@ -32,7 +32,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       setCurrentStep(stepIndex);
     } else {
       // Show toast message indicating why navigation is blocked
-      toast.error('Please complete the previous step first');
+      toast.error('Please complete the current step first');
     }
   };
 

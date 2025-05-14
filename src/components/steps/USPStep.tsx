@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +12,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 
-const USPStep: React.FC = () => {
+interface USPStepProps {
+  autoGenerate?: boolean;
+}
+
+const USPStep: React.FC<USPStepProps> = ({ autoGenerate = false }) => {
   const { business, icps, usps, setUSPs, setCurrentStep, isGenerating, setIsGenerating, addCustomUSP } = useMarketingTool();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newUSP, setNewUSP] = useState<Partial<USP>>({
@@ -61,6 +64,13 @@ const USPStep: React.FC = () => {
       setIsGenerating(false);
     }
   };
+
+  // Auto-generate on first visit
+  useEffect(() => {
+    if (autoGenerate && usps.length === 0 && localStorage.getItem('openai_api_key') && !isGenerating) {
+      handleGenerateUSPs();
+    }
+  }, [autoGenerate]);
 
   const handleAddCustomUSP = () => {
     if (!newUSP.title || !newUSP.description || !newUSP.targetICP || !newUSP.valueProposition) {
