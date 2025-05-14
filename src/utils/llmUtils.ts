@@ -1,4 +1,3 @@
-
 import { toast } from '@/components/ui/use-toast';
 import { Business, ICP, USP, Geography } from '@/contexts/MarketingToolContext';
 
@@ -246,7 +245,7 @@ export async function generateGeographies(business: Business): Promise<Geography
     console.log('Geography response structure:', response);
     
     // Get the geographies array, which might be directly in the response
-    // or nested under a "geographies" property (case-insensitive)
+    // or nested under different property names ("geographies", "markets", etc.)
     let geographiesArray;
     
     if (response.Geographies) {
@@ -255,12 +254,32 @@ export async function generateGeographies(business: Business): Promise<Geography
     } else if (response.geographies) {
       console.log('Found geographies property (lowercase)');
       geographiesArray = response.geographies;
+    } else if (response.Markets) {
+      console.log('Found Markets property (capitalized)');
+      geographiesArray = response.Markets;
+    } else if (response.markets) {
+      console.log('Found markets property (lowercase)');
+      geographiesArray = response.markets;
     } else if (Array.isArray(response)) {
       console.log('Response is directly an array');
       geographiesArray = response;
     } else {
+      // Check all keys and log them for debugging
       console.error('Could not find geographies array in response. Keys:', Object.keys(response));
-      throw new Error('Invalid response format: Could not find geographies array');
+      
+      // Check if any other key might contain an array with region properties
+      for (const key of Object.keys(response)) {
+        if (Array.isArray(response[key]) && response[key].length > 0 && response[key][0].region) {
+          console.log(`Found array with region properties in key: ${key}`);
+          geographiesArray = response[key];
+          break;
+        }
+      }
+      
+      // If we still couldn't find a suitable array
+      if (!geographiesArray) {
+        throw new Error('Invalid response format: Could not find geographies array');
+      }
     }
     
     // Ensure we have an array to work with
