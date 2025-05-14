@@ -176,25 +176,30 @@ export const MarketingToolProvider: React.FC<{ children: React.ReactNode }> = ({
     return "Various businesses across multiple sectors";
   };
 
-  // Add new custom entity functions
+  // Generate a unique ID for custom entities
+  const generateUniqueId = (prefix: string) => {
+    return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+  };
+
+  // Add new custom entity functions with unique IDs
   const addCustomICP = (icp: ICP) => {
-    setICPs([...icps, { ...icp, id: `custom-${Date.now()}`, isCustomAdded: true }]);
+    setICPs([...icps, { ...icp, id: generateUniqueId('custom-icp'), isCustomAdded: true }]);
   };
 
   const addCustomUSP = (usp: USP) => {
-    setUSPs([...usps, { ...usp, id: `custom-${Date.now()}`, isCustomAdded: true }]);
+    setUSPs([...usps, { ...usp, id: generateUniqueId('custom-usp'), isCustomAdded: true }]);
   };
 
   const addCustomGeography = (geo: Geography) => {
-    setGeographies([...geographies, { ...geo, id: `custom-${Date.now()}`, isCustomAdded: true }]);
+    setGeographies([...geographies, { ...geo, id: generateUniqueId('custom-geo'), isCustomAdded: true }]);
   };
 
   const addCustomKeyword = (keyword: Keyword) => {
-    setKeywords([...keywords, { ...keyword, id: `custom-${Date.now()}`, isCustomAdded: true }]);
+    setKeywords([...keywords, { ...keyword, id: generateUniqueId('custom-kw'), isCustomAdded: true }]);
   };
 
   const addCustomContentIdea = (idea: ContentIdea) => {
-    setContentIdeas([...contentIdeas, { ...idea, id: `custom-${Date.now()}`, isCustomAdded: true, published: false }]);
+    setContentIdeas([...contentIdeas, { ...idea, id: generateUniqueId('custom-content'), isCustomAdded: true, published: false }]);
   };
 
   const publishContent = (id: string) => {

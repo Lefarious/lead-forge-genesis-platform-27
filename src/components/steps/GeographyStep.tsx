@@ -26,17 +26,39 @@ const GeographyStep: React.FC = () => {
 
   const handleGenerateGeographies = async () => {
     if (!localStorage.getItem('openai_api_key')) {
-      toast.error('Please set your OpenAI API key first');
+      toast({
+        title: "API Key Missing",
+        description: "Please set your OpenAI API key first",
+        variant: "destructive"
+      });
       return;
     }
 
     setIsGenerating(true);
     try {
       const generatedGeographies = await generateGeographies(business);
-      setGeographies([...geographies, ...generatedGeographies]); // Append new geographies
-      toast.success('Target geographies generated!');
+      
+      // Ensure unique keys by modifying the IDs of the new geographies
+      const existingIds = new Set(geographies.map(geo => geo.id));
+      const uniqueGeographies = generatedGeographies.map(geo => {
+        // If this ID already exists in our list, create a new unique ID
+        if (existingIds.has(geo.id)) {
+          return { ...geo, id: `gen-${Date.now()}-${Math.random().toString(36).substring(2, 9)}` };
+        }
+        return geo;
+      });
+      
+      setGeographies([...geographies, ...uniqueGeographies]); // Append new geographies
+      toast({
+        title: "Success!",
+        description: "Target geographies generated!",
+      });
     } catch (error) {
-      toast.error('Failed to generate geographies');
+      toast({
+        title: "Error",
+        description: "Failed to generate geographies",
+        variant: "destructive"
+      });
       console.error(error);
     } finally {
       setIsGenerating(false);
@@ -46,7 +68,11 @@ const GeographyStep: React.FC = () => {
   const handleAddCustomGeography = () => {
     if (!newGeography.region || !newGeography.marketSize || !newGeography.growthRate || 
         !newGeography.competitionLevel || !newGeography.recommendation) {
-      toast.error('Please fill all fields');
+      toast({
+        title: "Validation Error",
+        description: "Please fill all fields",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -59,12 +85,19 @@ const GeographyStep: React.FC = () => {
       competitionLevel: '',
       recommendation: ''
     });
-    toast.success('Custom geography added successfully');
+    toast({
+      title: "Success!",
+      description: "Custom geography added successfully",
+    });
   };
 
   const handleContinue = () => {
     if (geographies.length === 0) {
-      toast.error('Please generate geographies first');
+      toast({
+        title: "Required Data",
+        description: "Please generate geographies first",
+        variant: "destructive"
+      });
       return;
     }
     setCurrentStep(5);
