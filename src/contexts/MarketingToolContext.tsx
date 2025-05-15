@@ -9,6 +9,7 @@ export type Business = {
   mainProblem: string;
   mainSolution: string;
   existingCustomers: string;
+  products: string[];
 };
 
 export type ICP = {
@@ -111,6 +112,7 @@ const defaultBusiness: Business = {
   mainProblem: '',
   mainSolution: '',
   existingCustomers: '',
+  products: [],
 };
 
 const defaultLandingPage: LandingPage = {
@@ -139,13 +141,15 @@ export const MarketingToolProvider: React.FC<{ children: React.ReactNode }> = ({
   const setBusinessInfo = (info: Partial<Business>) => {
     // Auto-generate missing fields based on provided information
     const completeInfo = {
-      ...info,
-      targetAudience: generateTargetAudience(info),
-      mainSolution: generateSolution(info),
-      existingCustomers: generateExistingCustomers(info),
+      ...business, // Start with existing business data
+      ...info, // Add new info
+      targetAudience: info.targetAudience || generateTargetAudience(info),
+      mainSolution: info.mainSolution || generateSolution(info),
+      existingCustomers: info.existingCustomers || generateExistingCustomers(info),
+      products: info.products || business.products || [],
     };
     
-    setBusiness(prev => ({ ...prev, ...completeInfo }));
+    setBusiness(completeInfo);
     setLandingPage(prev => ({
       ...prev,
       businessName: info.name || prev.businessName,
