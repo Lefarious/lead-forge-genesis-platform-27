@@ -118,7 +118,7 @@ export const generateICPs = async (business: any, existingICPs: any[] = []): Pro
             Ensure these are diverse, focused profiles that don't overlap too much with each other.
             Make sure none of the ICPs duplicate existing ones.
             ALWAYS provide complete demographic information, even if it needs to be generalized.
-            Respond in JSON format only with an array of ICPs.`
+            IMPORTANT: Return a valid JSON array only, with no additional text or markdown formatting.`
           },
           {
             role: 'user',
@@ -142,46 +142,116 @@ export const generateICPs = async (business: any, existingICPs: any[] = []): Pro
     console.log('ICP generation response:', responseData);
 
     const contentString = responseData.choices[0].message.content;
+    console.log('Raw ICP content:', contentString);
     
-    // Remove any markdown formatting that might be in the response
-    const cleanedContentString = contentString.replace(/```json|```/g, '').trim();
+    // Remove any markdown formatting or extra characters that might be in the response
+    const cleanedContentString = contentString
+      .replace(/```json|```/g, '') // Remove markdown code blocks
+      .replace(/^\s*\[|\]\s*$/g, '[,]') // Ensure we have opening and closing brackets
+      .trim();
+    
+    console.log('Cleaned content:', cleanedContentString);
     
     // Attempt to parse the cleaned JSON
     let parsedContent;
     try {
-      parsedContent = JSON.parse(cleanedContentString);
+      // Handle both array and object formats
+      if (cleanedContentString.trim().startsWith('[')) {
+        parsedContent = JSON.parse(cleanedContentString);
+      } else {
+        // Try to parse as a single object
+        parsedContent = JSON.parse(`[${cleanedContentString}]`);
+      }
     } catch (parseError) {
       console.error('Error parsing JSON response:', parseError);
-      console.log('Raw content:', cleanedContentString);
-      throw new Error('Failed to parse API response as JSON');
+      
+      // More aggressive cleaning if parsing fails
+      try {
+        // Try to extract just the JSON part using regex
+        const jsonMatch = contentString.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          parsedContent = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error('Could not find valid JSON in the response');
+        }
+      } catch (secondParseError) {
+        console.error('Second parse attempt failed:', secondParseError);
+        console.log('Raw content for debugging:', contentString);
+        
+        // As a last resort, create a basic ICP from the business information
+        return [{
+          id: `gen-icp-${Date.now()}-0`,
+          title: `${business.industry} Customer`,
+          description: `A typical customer in the ${business.industry} industry that could benefit from ${business.name}'s services.`,
+          demographics: JSON.stringify({
+            companySize: "Various sizes",
+            industries: [business.industry || "Multiple industries"],
+            regions: ["Global"],
+            jobTitles: ["Decision makers"],
+            technologyAdoption: "Mixed"
+          }),
+          blueOceanScore: 5,
+          reachMethods: ["Industry events", "LinkedIn marketing", "Email campaigns"],
+          productSuggestions: ["Customized solutions", "Mobile integration", "Analytics dashboard"],
+          painPoints: ["Lack of expertise", "Inefficient processes", "Difficulty tracking results"],
+          goals: ["Improve efficiency", "Increase revenue", "Better customer experience"],
+          isCustomAdded: false
+        }];
+      }
     }
     
     // Handle different response formats
     let icps = [];
     if (Array.isArray(parsedContent)) {
       icps = parsedContent;
-    } else if (parsedContent.idealCustomerProfiles) {
-      icps = parsedContent.idealCustomerProfiles;
-    } else if (parsedContent.icps) {
-      icps = parsedContent.icps;
-    } else {
-      // If we can't find an array of ICPs, try to use the whole object as a single ICP
-      icps = [parsedContent];
+    } else if (parsedContent && typeof parsedContent === 'object') {
+      if (parsedContent.idealCustomerProfiles) {
+        icps = parsedContent.idealCustomerProfiles;
+      } else if (parsedContent.icps) {
+        icps = parsedContent.icps;
+      } else {
+        // If we can't find an array of ICPs, use the whole object as a single ICP
+        icps = [parsedContent];
+      }
     }
     
-    // Filter out any ICPs that duplicate existing ones
-    icps = icps.filter(icp => !existingTitles.includes(icp.title.toLowerCase()));
+    // Validate that we have data
+    if (!icps || icps.length === 0) {
+      throw new Error('No valid ICPs found in response');
+    }
     
+    console.log('Parsed ICPs:', icps);
+    
+    // Filter out any ICPs that duplicate existing ones
+    icps = icps.filter(icp => !existingTitles.includes((icp.title || '').toLowerCase()));
+    
+    // Format the ICPs into our standard structure
     return icps.map((icp: any, index: number) => ({
       id: `gen-icp-${Date.now()}-${index}`,
-      title: icp.title,
-      description: icp.description,
-      demographics: JSON.stringify(icp.demographics),
-      blueOceanScore: icp.blueOceanScore || 5, // Default to 5 if not provided
-      reachMethods: Array.isArray(icp.reachMethods) ? icp.reachMethods : [icp.reachMethods],
-      productSuggestions: Array.isArray(icp.productSuggestions) ? icp.productSuggestions : [icp.productSuggestions],
-      painPoints: Array.isArray(icp.painPoints) ? icp.painPoints : [icp.painPoints],
-      goals: Array.isArray(icp.goals) ? icp.goals : [icp.goals],
+      title: icp.title || icp.Title || `Customer Profile ${index + 1}`,
+      description: icp.description || icp.Description || `Customer profile for ${business.name}`,
+      demographics: typeof icp.demographics === 'string' ? 
+        icp.demographics : 
+        JSON.stringify(icp.demographics || icp.Demographics || {
+          companySize: "Various",
+          industries: [business.industry || "Multiple"],
+          regions: ["Global"],
+          jobTitles: ["Various roles"],
+          technologyAdoption: "Mixed"
+        }),
+      blueOceanScore: icp.blueOceanScore || icp.BlueOceanScore || 5,
+      reachMethods: Array.isArray(icp.reachMethods || icp.ReachMethods) ? 
+        (icp.reachMethods || icp.ReachMethods) : 
+        [(icp.reachMethods || icp.ReachMethods || "Digital marketing")],
+      productSuggestions: Array.isArray(icp.productSuggestions || icp.ProductSuggestions) ? 
+        (icp.productSuggestions || icp.ProductSuggestions) : 
+        [(icp.productSuggestions || icp.ProductSuggestions || "Customized solution")],
+      painPoints: Array.isArray(icp.painPoints || icp.PainPoints) ? 
+        (icp.painPoints || icp.PainPoints) : 
+        [(icp.painPoints || icp.PainPoints || "Industry challenges")],
+      goals: Array.isArray(icp.goals || icp.Goals) ? 
+        (icp.goals || icp.Goals) : 
+        [(icp.goals || icp.Goals || "Business improvement")],
       isCustomAdded: false
     }));
   } catch (error) {
