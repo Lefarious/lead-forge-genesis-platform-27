@@ -1,9 +1,8 @@
 
 #root {
-  max-width: 100%;
-  width: 100%;
-  margin: 0;
-  padding: 0;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
   text-align: center;
 }
 
@@ -38,7 +37,6 @@
 .card {
   padding: 2em;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  border-radius: 1rem;
 }
 
 .card:hover {
@@ -62,9 +60,6 @@
 .quantum-button {
   background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
   transition: all 0.3s ease;
-  border-radius: 0.75rem;
-  overflow: hidden;
-  position: relative;
 }
 
 .quantum-button:hover {
@@ -72,46 +67,22 @@
   box-shadow: 0 0 15px rgba(139, 92, 246, 0.5);
 }
 
-.quantum-button::before {
-  content: '';
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  background: linear-gradient(45deg, #8b5cf6, #6d28d9, #8b5cf6);
-  z-index: -1;
-  animation: rotation 2s linear infinite;
-  border-radius: 0.75rem;
-}
-
-@keyframes rotation {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
 /* Custom card styles */
 .quantum-card {
-  border-radius: 1rem;
+  border-radius: var(--radius);
   transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
 }
 
 .dark .quantum-card {
-  background-color: rgba(10, 10, 10, 0.6);
+  background-color: rgba(30, 30, 40, 0.6);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Shiny accent */
+/* Shiny green accent */
 .quantum-accent {
   position: relative;
   overflow: hidden;
-  border-radius: 0.75rem;
 }
 
 .quantum-accent::before {
@@ -129,53 +100,4 @@
   transform: rotate(45deg);
   pointer-events: none;
   z-index: 2;
-  border-radius: 0.75rem;
-}
-
-/* Modern UI elements */
-.glass-morph {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1rem;
-}
-
-.dark .glass-morph {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-/* Enhanced input styles */
-input.modern-input {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.75rem;
-  backdrop-filter: blur(5px);
-  transition: all 0.3s ease;
-}
-
-input.modern-input:focus {
-  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.3);
-  border-color: rgba(139, 92, 246, 0.5);
-}
-
-.dark input.modern-input {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  color: white;
-}
-
-/* Dribbble-inspired styles */
-.dribbble-gradient {
-  background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
-}
-
-.dribbble-overlay {
-  background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.7));
-}
-
-.dribbble-pattern {
-  background-image: radial-gradient(rgba(139, 92, 246, 0.3) 2px, transparent 2px);
-  background-size: 30px 30px;
 }
