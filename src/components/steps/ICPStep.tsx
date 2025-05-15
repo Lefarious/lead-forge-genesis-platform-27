@@ -56,8 +56,9 @@ const ICPStep: React.FC<ICPStepProps> = () => {
 
     setIsGenerating(true);
     try {
-      // Pass in existing ICPs to ensure we get unique ones, and generate 3 new ones
-      const moreICPs = await generateICPs(business, 3, icps);
+      // The error is here - we're passing 3 arguments but the function only accepts 1-2
+      // Let's check the signature of generateICPs and adjust accordingly
+      const moreICPs = await generateICPs(business, icps);
       setICPs([...icps, ...moreICPs]);
       toast.success('Additional ICPs generated!');
     } catch (error) {
