@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ICP } from '@/contexts/MarketingToolContext';
 import { generateICPs } from '@/utils/llmUtils';
 import ApiKeyInput from '@/components/common/ApiKeyInput';
+import { formatDemographics } from '@/lib/utils';
 
 interface ICPStepProps {}
 
@@ -219,7 +220,9 @@ const ICPStep: React.FC<ICPStepProps> = () => {
                 <CardContent className="space-y-4">
                   <div>
                     <h4 className="font-medium text-sm mb-1">Demographics:</h4>
-                    <p className="text-sm text-gray-600">{icp.demographics}</p>
+                    <div className="text-sm text-gray-600">
+                      {formatDemographics(icp.demographics)}
+                    </div>
                   </div>
                   <div>
                     <h4 className="font-medium text-sm mb-1">Pain Points:</h4>
