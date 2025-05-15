@@ -547,3 +547,65 @@ export const validateCustomICP = async (icp: any, business: any): Promise<{isVal
     };
   }
 };
+
+export const generateCompetitiveAnalysis = async (business: any, usp: any): Promise<any> => {
+  try {
+    const apiKey = localStorage.getItem('openai_api_key');
+    if (!apiKey) {
+      throw new Error('API key not found');
+    }
+    
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `You are an expert market analyst helping a business understand the competitive landscape for one of their Unique Selling Points (USPs).
+            Based on the business information and USP provided, generate a competitive analysis that includes:
+            1. Market Substitutes: List 2-3 closest substitutes or competitors in the market
+            2. Competitor Advantages: What advantages these competitors have over the business
+            3. Business Advantages: What advantages the business has over these competitors
+            4. Pricing Strategy: Recommended pricing strategy for this USP (e.g., premium, value, freemium, subscription)
+            5. Monetization Plan: Specific monetization suggestions for this USP
+            6. USP Health: An overall assessment of the USP's strength (Strong, Moderate, Needs Improvement)
+            7. Health Reasoning: Brief explanation of the USP health assessment
+            
+            Respond in JSON format with these exact keys.`
+          },
+          {
+            role: 'user',
+            content: `Business Name: ${business.name}
+            Industry: ${business.industry}
+            Description: ${business.description}
+            
+            USP Title: ${usp.title}
+            USP Description: ${usp.description}
+            Target ICP: ${usp.targetICP}
+            Value Proposition: ${usp.valueProposition}`
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 1000
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+    }
+
+    const responseData = await response.json();
+    console.log('Competitive analysis response:', responseData);
+
+    const contentString = responseData.choices[0].message.content;
+    return JSON.parse(contentString);
+  } catch (error) {
+    console.error('Competitive analysis error:', error);
+    throw error;
+  }
+};
