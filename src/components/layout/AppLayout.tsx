@@ -41,12 +41,14 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className={cn("min-h-screen flex flex-col", isDarkMode ? "bg-gradient-to-br from-gray-900 to-gray-800" : "bg-gradient-to-br from-slate-50 to-gray-100")}>
-      <header className={cn("border-b shadow-sm py-4", isDarkMode ? "bg-gray-900 border-gray-700" : "bg-white")}>
+    <div className={cn("min-h-screen flex flex-col", 
+      isDarkMode ? "bg-gradient-to-br from-black to-gray-900" : "bg-gradient-to-br from-slate-50 to-gray-100")}>
+      <header className={cn("border-b py-4", 
+        isDarkMode ? "bg-black border-gray-800" : "bg-white border-gray-100")}>
         <div className="container flex justify-between items-center">
           <div className="flex items-center">
             <div className={cn("font-bold text-2xl bg-clip-text text-transparent", 
-              isDarkMode ? "bg-gradient-to-r from-purple-400 to-purple-600" : "bg-gradient-to-r from-marketing-600 to-marketing-800")}>
+              "bg-gradient-to-r from-purple-400 to-purple-600")}>
               Marketing AI
             </div>
             <div className="hidden md:flex ml-10 gap-2">
@@ -64,11 +66,11 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                       "px-3 py-1 rounded-md text-sm font-medium transition-colors",
                       isDarkMode
                         ? currentStep === stepNumber 
-                          ? "bg-purple-900 text-purple-100" 
+                          ? "bg-purple-900/50 text-purple-100 backdrop-blur-sm" 
                           : currentStep > stepNumber 
-                            ? "text-gray-300 hover:bg-gray-800" 
+                            ? "text-gray-300 hover:bg-gray-800/50 hover:backdrop-blur-sm" 
                             : isClickable
-                              ? "text-gray-400 hover:bg-gray-800"
+                              ? "text-gray-400 hover:bg-gray-800/50 hover:backdrop-blur-sm"
                               : "text-gray-600 cursor-not-allowed opacity-60"
                         : currentStep === stepNumber 
                           ? "bg-marketing-100 text-marketing-700" 
@@ -89,7 +91,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             variant="ghost" 
             size="icon"
             onClick={toggleTheme}
-            className="rounded-full"
+            className={cn("rounded-full transition-all duration-300",
+              isDarkMode ? "hover:bg-white/10" : "hover:bg-black/5")}
           >
             {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
@@ -98,8 +101,10 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       <main className="flex-1">
         {children}
       </main>
-      <footer className={cn("border-t py-4", isDarkMode ? "bg-gray-900 border-gray-700" : "bg-white")}>
-        <div className={cn("container text-center text-sm", isDarkMode ? "text-gray-400" : "text-gray-500")}>
+      <footer className={cn("border-t py-4", 
+        isDarkMode ? "bg-black border-gray-800" : "bg-white border-gray-100")}>
+        <div className={cn("container text-center text-sm", 
+          isDarkMode ? "text-gray-400" : "text-gray-500")}>
           &copy; {new Date().getFullYear()} Marketing AI. All rights reserved.
         </div>
       </footer>
