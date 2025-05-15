@@ -1,54 +1,73 @@
 
+// LLM API utilities for generating marketing content
+
+// Core OpenAI API function
+export const callOpenAI = async (messages: any[], options: {
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
+} = {}): Promise<any> => {
+  const apiKey = localStorage.getItem('openai_api_key');
+  if (!apiKey) {
+    throw new Error('API key not found');
+  }
+
+  const {
+    model = 'gpt-4o-mini',
+    temperature = 0.7,
+    maxTokens = 1200
+  } = options;
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model,
+      messages,
+      temperature,
+      max_tokens: maxTokens
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+  }
+
+  return await response.json();
+};
+
 export const generateGeographies = async (business: any, existingGeographies: any[] = []): Promise<any[]> => {
   try {
-    const apiKey = localStorage.getItem('openai_api_key');
-    if (!apiKey) {
-      throw new Error('API key not found');
-    }
-
     const existingRegions = existingGeographies.map(geo => geo.region.toLowerCase());
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+    const messages = [
+      {
+        role: 'system',
+        content: `You are an expert marketing strategist helping a business identify the best target countries for expansion.
+        Given the following business information, analyze and recommend 2-3 countries to target.
+        For each country, provide:
+        - Region (country name)
+        - Market Size (in USD)
+        - Growth Rate (% annually)
+        - Competition Level (High, Medium, Low)
+        - A brief explanation of why this country is a good target (Why Target)
+        - A strategic recommendation for this market (Recommendation)
+        - Pricing Power (Strong, Moderate, Weak) - how much pricing leverage the business would have in this market
+        - Profitability Rating (High, Medium, Low) - expected profitability in this market
+        - Brand Personality (brief description) - what brand traits would resonate best in this market
+        Ensure the countries are diverse and not already in the existing list.
+        Respond in JSON format only.`
       },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an expert marketing strategist helping a business identify the best target countries for expansion.
-            Given the following business information, analyze and recommend 2-3 countries to target.
-            For each country, provide:
-            - Region (country name)
-            - Market Size (in USD)
-            - Growth Rate (% annually)
-            - Competition Level (High, Medium, Low)
-            - A brief explanation of why this country is a good target (Why Target)
-            - A strategic recommendation for this market (Recommendation)
-            - Pricing Power (Strong, Moderate, Weak) - how much pricing leverage the business would have in this market
-            - Profitability Rating (High, Medium, Low) - expected profitability in this market
-            - Brand Personality (brief description) - what brand traits would resonate best in this market
-            Ensure the countries are diverse and not already in the existing list.
-            Respond in JSON format only.`
-          },
-          {
-            role: 'user',
-            content: `Business Name: ${business.name}\nIndustry: ${business.industry}\nDescription: ${business.description}\nTarget Market: ${business.targetMarket}`
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 1200
-      })
-    });
+      {
+        role: 'user',
+        content: `Business Name: ${business.name}\nIndustry: ${business.industry}\nDescription: ${business.description}\nTarget Market: ${business.targetMarket}`
+      }
+    ];
 
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
-    }
-
-    const responseData = await response.json();
+    const responseData = await callOpenAI(messages);
     console.log('Geography generation response:', responseData);
 
     const contentString = responseData.choices[0].message.content;
@@ -80,65 +99,38 @@ export const generateGeographies = async (business: any, existingGeographies: an
 
 export const generateICPs = async (business: any, existingICPs: any[] = []): Promise<any[]> => {
   try {
-    const apiKey = localStorage.getItem('openai_api_key');
-    if (!apiKey) {
-      throw new Error('API key not found');
-    }
-    
     // Extract existing titles to avoid duplicates
     const existingTitles = existingICPs.map(icp => icp.title.toLowerCase());
     
-    // Include products in the prompt
-    const productsPrompt = business.products && business.products.length > 0 
-      ? `Products/Services: ${business.products.join(', ')}` 
-      : '';
-    
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+    const messages = [
+      {
+        role: 'system',
+        content: `You are an expert marketing strategist helping a business identify their ideal customer profiles (ICPs).
+        Based on the business information provided, generate 2-3 detailed ICPs that would be ideal targets for their products/services.
+        For each ICP provide:
+        - Title (concise name for this customer segment)
+        - Description (2-3 sentences about this customer type)
+        - Demographics (as a JSON object with companySize, industries, regions, jobTitles, and technologyAdoption)
+        - BlueOceanScore (a number from 1-10, where 1 is a "red ocean" with high competition and 10 is a "blue ocean" with little competition)
+        - ReachMethods (3-5 specific channels or methods to effectively reach this ICP)
+        - ProductSuggestions (3-5 specific ways to tailor or tweak products to better meet this ICP's needs)
+        - Pain Points (3-5 specific problems this ICP faces that the business could solve)
+        - Goals (3-5 key objectives this ICP is trying to achieve)
+        Ensure these are diverse, focused profiles that don't overlap too much with each other.
+        Make sure none of the ICPs duplicate existing ones.
+        ALWAYS provide complete demographic information, even if it needs to be generalized.
+        IMPORTANT: Return a valid JSON array only, with no additional text or markdown formatting.`
       },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an expert marketing strategist helping a business identify their ideal customer profiles (ICPs).
-            Based on the business information provided, generate 2-3 detailed ICPs that would be ideal targets for their products/services.
-            For each ICP provide:
-            - Title (concise name for this customer segment)
-            - Description (2-3 sentences about this customer type)
-            - Demographics (as a JSON object with companySize, industries, regions, jobTitles, and technologyAdoption)
-            - BlueOceanScore (a number from 1-10, where 1 is a "red ocean" with high competition and 10 is a "blue ocean" with little competition)
-            - ReachMethods (3-5 specific channels or methods to effectively reach this ICP)
-            - ProductSuggestions (3-5 specific ways to tailor or tweak products to better meet this ICP's needs)
-            - Pain Points (3-5 specific problems this ICP faces that the business could solve)
-            - Goals (3-5 key objectives this ICP is trying to achieve)
-            Ensure these are diverse, focused profiles that don't overlap too much with each other.
-            Make sure none of the ICPs duplicate existing ones.
-            ALWAYS provide complete demographic information, even if it needs to be generalized.
-            IMPORTANT: Return a valid JSON array only, with no additional text or markdown formatting.`
-          },
-          {
-            role: 'user',
-            content: `Business Name: ${business.name}
-            Industry: ${business.industry}
-            Description: ${business.description}
-            Main Problem: ${business.mainProblem || 'Not specified'}
-            ${productsPrompt}`
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 1500
-      })
-    });
+      {
+        role: 'user',
+        content: `Business Name: ${business.name}
+        Industry: ${business.industry}
+        Description: ${business.description}
+        Main Problem: ${business.mainProblem || 'Not specified'}`
+      }
+    ];
 
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
-    }
-
-    const responseData = await response.json();
+    const responseData = await callOpenAI(messages, { maxTokens: 1500 });
     console.log('ICP generation response:', responseData);
 
     const contentString = responseData.choices[0].message.content;
@@ -262,11 +254,6 @@ export const generateICPs = async (business: any, existingICPs: any[] = []): Pro
 
 export const generateUSPs = async (business: any, icps: any[], existingUSPs: any[] = []): Promise<any[]> => {
   try {
-    const apiKey = localStorage.getItem('openai_api_key');
-    if (!apiKey) {
-      throw new Error('API key not found');
-    }
-    
     // Extract existing titles to avoid duplicates
     const existingTitles = existingUSPs.map(usp => usp.title.toLowerCase());
     
@@ -275,54 +262,32 @@ export const generateUSPs = async (business: any, icps: any[], existingUSPs: any
       ? `ICPs: ${icps.map(icp => `${icp.title} - ${icp.description}`).join('\n')}` 
       : 'No ICPs provided.';
     
-    // Include products in the prompt
-    const productsPrompt = business.products && business.products.length > 0 
-      ? `Products/Services: ${business.products.join(', ')}` 
-      : '';
-    
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+    const messages = [
+      {
+        role: 'system',
+        content: `You are an expert marketing strategist helping a business identify their unique selling propositions (USPs).
+        Based on the business information and ICPs provided, generate 2-3 strong USPs that would appeal to their ideal customers.
+        For each USP provide:
+        - Title (concise name for this USP)
+        - Description (2-3 sentences explaining this USP)
+        - Target ICP (which ICP from the provided list this USP primarily targets)
+        - Value Proposition (clear statement of the value delivered)
+        Ensure these are compelling differentiators that are meaningful to the target audience.
+        Make sure none of the USPs duplicate existing ones.
+        Respond in JSON format only.`
       },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an expert marketing strategist helping a business identify their unique selling propositions (USPs).
-            Based on the business information and ICPs provided, generate 2-3 strong USPs that would appeal to their ideal customers.
-            For each USP provide:
-            - Title (concise name for this USP)
-            - Description (2-3 sentences explaining this USP)
-            - Target ICP (which ICP from the provided list this USP primarily targets)
-            - Value Proposition (clear statement of the value delivered)
-            Ensure these are compelling differentiators that are meaningful to the target audience.
-            Make sure none of the USPs duplicate existing ones.
-            Respond in JSON format only.`
-          },
-          {
-            role: 'user',
-            content: `Business Name: ${business.name}
-            Industry: ${business.industry}
-            Description: ${business.description}
-            Main Problem: ${business.mainProblem || 'Not specified'}
-            ${productsPrompt}
-            
-            ${icpPrompt}`
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 1200
-      })
-    });
+      {
+        role: 'user',
+        content: `Business Name: ${business.name}
+        Industry: ${business.industry}
+        Description: ${business.description}
+        Main Problem: ${business.mainProblem || 'Not specified'}
+        
+        ${icpPrompt}`
+      }
+    ];
 
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
-    }
-
-    const responseData = await response.json();
+    const responseData = await callOpenAI(messages);
     console.log('USP generation response:', responseData);
 
     const contentString = responseData.choices[0].message.content;
@@ -356,11 +321,6 @@ export const generateKeywords = async (
   geographies: any[] = []
 ): Promise<any[]> => {
   try {
-    const apiKey = localStorage.getItem('openai_api_key');
-    if (!apiKey) {
-      throw new Error('API key not found');
-    }
-
     // Extract existing terms to avoid duplicates
     const existingTerms = existingKeywords.map(kw => kw.term.toLowerCase());
     
@@ -372,8 +332,7 @@ export const generateKeywords = async (
       mainProblem: business.mainProblem || 'Not specified',
       mainSolution: business.mainSolution || 'Not specified',
       targetAudience: business.targetAudience || 'Not specified',
-      existingCustomers: business.existingCustomers || 'Not specified',
-      products: business.products || []
+      existingCustomers: business.existingCustomers || 'Not specified'
     };
     
     // Prepare ICP data
@@ -411,54 +370,38 @@ export const generateKeywords = async (
       ? `Existing Keywords (DO NOT DUPLICATE): ${existingTerms.join(', ')}` 
       : '';
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+    const messages = [
+      {
+        role: 'system',
+        content: `You are an expert SEO strategist helping a business identify valuable keywords.
+        Based on all the provided business data, generate EXACTLY 15 highly relevant keywords.
+        For each keyword provide:
+        - Term (the actual search term or phrase)
+        - Search Volume (estimated monthly searches, e.g., "1,000-5,000")
+        - Difficulty (Low, Medium-Low, Medium, Medium-High, High)
+        - Relevance (Low, Medium, High)
+        - Related ICP (which ICP from the provided list this keyword primarily targets)
+        - Competitor Usage (Low, Medium, High - how frequently competitors are using this keyword)
+        
+        Ensure keywords are varied, specific, and have commercial intent where appropriate.
+        Include some long-tail keywords with lower competition.
+        Generate keywords that cover all geographic regions and ICPs, but prioritize those with higher profitability.
+        DO NOT INCLUDE ANY KEYWORDS THAT ARE ALREADY IN THE EXISTING LIST.
+        Respond in JSON format only.`
       },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an expert SEO strategist helping a business identify valuable keywords.
-            Based on all the provided business data, generate EXACTLY 15 highly relevant keywords.
-            For each keyword provide:
-            - Term (the actual search term or phrase)
-            - Search Volume (estimated monthly searches, e.g., "1,000-5,000")
-            - Difficulty (Low, Medium-Low, Medium, Medium-High, High)
-            - Relevance (Low, Medium, High)
-            - Related ICP (which ICP from the provided list this keyword primarily targets)
-            - Competitor Usage (Low, Medium, High - how frequently competitors are using this keyword)
-            
-            Ensure keywords are varied, specific, and have commercial intent where appropriate.
-            Include some long-tail keywords with lower competition.
-            Generate keywords that cover all geographic regions and ICPs, but prioritize those with higher profitability.
-            DO NOT INCLUDE ANY KEYWORDS THAT ARE ALREADY IN THE EXISTING LIST.
-            Respond in JSON format only.`
-          },
-          {
-            role: 'user',
-            content: JSON.stringify({
-              business: businessData,
-              icps: icpData,
-              usps: uspData,
-              geographies: geoData,
-              existingKeywords: existingKeywordPrompt
-            })
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 2000
-      })
-    });
+      {
+        role: 'user',
+        content: JSON.stringify({
+          business: businessData,
+          icps: icpData,
+          usps: uspData,
+          geographies: geoData,
+          existingKeywords: existingKeywordPrompt
+        })
+      }
+    ];
 
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
-    }
-
-    const responseData = await response.json();
+    const responseData = await callOpenAI(messages, { maxTokens: 2000 });
     console.log('Keywords generation response:', responseData);
 
     const contentString = responseData.choices[0].message.content;
@@ -497,11 +440,6 @@ export const generateContentIdeas = async (
   existingIdeas: any[] = []
 ): Promise<any[]> => {
   try {
-    const apiKey = localStorage.getItem('openai_api_key');
-    if (!apiKey) {
-      throw new Error('API key not found');
-    }
-
     const existingTitles = existingIdeas.map(idea => idea.title.toLowerCase());
     
     // Create prompts from data
@@ -523,50 +461,29 @@ export const generateContentIdeas = async (
       ? `Target Geographies: ${geographies.map(geo => `${geo.region} (${geo.marketSize}, ${geo.growthRate} growth)`).join('\n')}`
       : '';
     
-    // Include products in the prompt
-    const productsPrompt = business.products && business.products.length > 0 
-      ? `Products/Services: ${business.products.join(', ')}` 
-      : '';
-    
     // Include existing content titles to avoid duplication
     const existingContentPrompt = existingTitles.length > 0
       ? `Existing Content (DO NOT DUPLICATE): ${existingTitles.join(', ')}`
       : '';
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+    const messages = [
+      {
+        role: 'system',
+        content: `You are an expert content strategist helping a business create valuable marketing content. 
+        Generate 2-3 unique, high-value content ideas based on the provided business information, ICPs, USPs, target geographies, and keywords. 
+        Each content idea should include: title, content type (Blog Post, White Paper, eBook, Webinar, Case Study, Infographic, Video), 
+        target ICP, target keywords (2-3 from provided list), a detailed outline (5-7 points), and estimated value (Low, Medium, High).
+        Make sure titles are catchy, specific, and include keywords. Content should address pain points and goals.
+        DO NOT DUPLICATE any existing content titles.
+        Respond in JSON format only.`
       },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an expert content strategist helping a business create valuable marketing content. 
-            Generate 2-3 unique, high-value content ideas based on the provided business information, ICPs, USPs, target geographies, and keywords. 
-            Each content idea should include: title, content type (Blog Post, White Paper, eBook, Webinar, Case Study, Infographic, Video), 
-            target ICP, target keywords (2-3 from provided list), a detailed outline (5-7 points), and estimated value (Low, Medium, High).
-            Make sure titles are catchy, specific, and include keywords. Content should address pain points and goals.
-            DO NOT DUPLICATE any existing content titles.
-            Respond in JSON format only.`
-          },
-          {
-            role: 'user',
-            content: `${businessPrompt}\n\n${icpPrompt}\n\n${keywordPrompt}\n\n${uspPrompt}\n\n${geoPrompt}\n\n${productsPrompt}\n\n${existingContentPrompt}`
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 2000
-      })
-    });
+      {
+        role: 'user',
+        content: `${businessPrompt}\n\n${icpPrompt}\n\n${keywordPrompt}\n\n${uspPrompt}\n\n${geoPrompt}\n\n${existingContentPrompt}`
+      }
+    ];
 
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
-    }
-
-    const responseData = await response.json();
+    const responseData = await callOpenAI(messages, { maxTokens: 2000 });
     console.log('Content generation response:', responseData);
 
     const contentString = responseData.choices[0].message.content;
@@ -593,62 +510,41 @@ export const generateContentIdeas = async (
 
 export const validateCustomICP = async (icp: any, business: any): Promise<{isValid: boolean, feedback: string}> => {
   try {
-    const apiKey = localStorage.getItem('openai_api_key');
-    if (!apiKey) {
-      throw new Error('API key not found');
-    }
-    
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+    const messages = [
+      {
+        role: 'system',
+        content: `You are an expert marketing strategist who evaluates proposed Ideal Customer Profiles (ICPs) for businesses.
+        Your task is to determine if a proposed ICP is viable and realistic for the given business.
+        Consider the following criteria:
+        1. Alignment with the business's products/services
+        2. Market size and accessibility
+        3. Coherence of the ICP's characteristics
+        4. Feasibility of targeting this segment
+        
+        Return a JSON object with:
+        - isValid: boolean (true if the ICP seems valid, false if it's extremely improbable)
+        - feedback: string (constructive feedback explaining your assessment)
+        
+        Be conservative in rejecting ICPs - only mark as invalid if there are serious problems.`
       },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an expert marketing strategist who evaluates proposed Ideal Customer Profiles (ICPs) for businesses.
-            Your task is to determine if a proposed ICP is viable and realistic for the given business.
-            Consider the following criteria:
-            1. Alignment with the business's products/services
-            2. Market size and accessibility
-            3. Coherence of the ICP's characteristics
-            4. Feasibility of targeting this segment
-            
-            Return a JSON object with:
-            - isValid: boolean (true if the ICP seems valid, false if it's extremely improbable)
-            - feedback: string (constructive feedback explaining your assessment)
-            
-            Be conservative in rejecting ICPs - only mark as invalid if there are serious problems.`
-          },
-          {
-            role: 'user',
-            content: `Business Information:
-            Name: ${business.name}
-            Industry: ${business.industry}
-            Description: ${business.description}
-            
-            Proposed ICP:
-            Title: ${icp.title}
-            Description: ${icp.description}
-            Demographics: ${icp.demographics}
-            Pain Points: ${icp.painPoints.join(', ')}
-            Goals: ${icp.goals.join(', ')}
-            `
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 500
-      })
-    });
+      {
+        role: 'user',
+        content: `Business Information:
+        Name: ${business.name}
+        Industry: ${business.industry}
+        Description: ${business.description}
+        
+        Proposed ICP:
+        Title: ${icp.title}
+        Description: ${icp.description}
+        Demographics: ${icp.demographics}
+        Pain Points: ${icp.painPoints.join(', ')}
+        Goals: ${icp.goals.join(', ')}
+        `
+      }
+    ];
 
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
-    }
-
-    const responseData = await response.json();
+    const responseData = await callOpenAI(messages, { maxTokens: 500 });
     console.log('ICP validation response:', responseData);
 
     const contentString = responseData.choices[0].message.content;
@@ -670,56 +566,35 @@ export const validateCustomICP = async (icp: any, business: any): Promise<{isVal
 
 export const generateCompetitiveAnalysis = async (business: any, usp: any): Promise<any> => {
   try {
-    const apiKey = localStorage.getItem('openai_api_key');
-    if (!apiKey) {
-      throw new Error('API key not found');
-    }
-    
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+    const messages = [
+      {
+        role: 'system',
+        content: `You are an expert market analyst helping a business understand the competitive landscape for one of their Unique Selling Points (USPs).
+        Based on the business information and USP provided, generate a competitive analysis that includes:
+        1. Market Substitutes: List 2-3 closest substitutes or competitors in the market
+        2. Competitor Advantages: What advantages these competitors have over the business
+        3. Business Advantages: What advantages the business has over these competitors
+        4. Pricing Strategy: Recommended pricing strategy for this USP (e.g., premium, value, freemium, subscription)
+        5. Monetization Plan: Specific monetization suggestions for this USP
+        6. USP Health: An overall assessment of the USP's strength (Strong, Moderate, Needs Improvement)
+        7. Health Reasoning: Brief explanation of the USP health assessment
+        
+        Respond in JSON format with these exact keys.`
       },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an expert market analyst helping a business understand the competitive landscape for one of their Unique Selling Points (USPs).
-            Based on the business information and USP provided, generate a competitive analysis that includes:
-            1. Market Substitutes: List 2-3 closest substitutes or competitors in the market
-            2. Competitor Advantages: What advantages these competitors have over the business
-            3. Business Advantages: What advantages the business has over these competitors
-            4. Pricing Strategy: Recommended pricing strategy for this USP (e.g., premium, value, freemium, subscription)
-            5. Monetization Plan: Specific monetization suggestions for this USP
-            6. USP Health: An overall assessment of the USP's strength (Strong, Moderate, Needs Improvement)
-            7. Health Reasoning: Brief explanation of the USP health assessment
-            
-            Respond in JSON format with these exact keys.`
-          },
-          {
-            role: 'user',
-            content: `Business Name: ${business.name}
-            Industry: ${business.industry}
-            Description: ${business.description}
-            
-            USP Title: ${usp.title}
-            USP Description: ${usp.description}
-            Target ICP: ${usp.targetICP}
-            Value Proposition: ${usp.valueProposition}`
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 1000
-      })
-    });
+      {
+        role: 'user',
+        content: `Business Name: ${business.name}
+        Industry: ${business.industry}
+        Description: ${business.description}
+        
+        USP Title: ${usp.title}
+        USP Description: ${usp.description}
+        Target ICP: ${usp.targetICP}
+        Value Proposition: ${usp.valueProposition}`
+      }
+    ];
 
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
-    }
-
-    const responseData = await response.json();
+    const responseData = await callOpenAI(messages);
     console.log('Competitive analysis response:', responseData);
 
     const contentString = responseData.choices[0].message.content;
