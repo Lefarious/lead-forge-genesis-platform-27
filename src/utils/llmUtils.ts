@@ -255,8 +255,8 @@ export const generateICPs = async (business: any, existingICPs: any[] = []): Pro
 
 export const generateUSPs = async (business: any, icps: any[], existingUSPs: any[] = []): Promise<any[]> => {
   try {
-    // Extract existing titles to avoid duplicates
-    const existingTitles = existingUSPs.map(usp => usp.title.toLowerCase());
+    // Extract existing titles to avoid duplicates - adding null check to prevent error
+    const existingTitles = existingUSPs.map(usp => usp.title ? usp.title.toLowerCase() : '');
     
     // Include ICPs in the prompt
     const icpPrompt = icps.length > 0 
@@ -295,17 +295,29 @@ export const generateUSPs = async (business: any, icps: any[], existingUSPs: any
     const parsedContent = JSON.parse(contentString);
     
     // Ensure we have an array of USPs
-    let usps = Array.isArray(parsedContent) ? parsedContent : [parsedContent];
+    let usps = [];
     
-    // Filter out any USPs that duplicate existing ones
-    usps = usps.filter(usp => !existingTitles.includes(usp.title.toLowerCase()));
+    // Check if parsedContent is an array or object with USPs property
+    if (Array.isArray(parsedContent)) {
+      usps = parsedContent;
+    } else if (parsedContent && typeof parsedContent === 'object') {
+      // Handle case where response is an object with USPs property
+      usps = parsedContent.USPs || parsedContent.usps || [parsedContent];
+    }
+    
+    // Filter out any USPs that duplicate existing ones - adding null check
+    usps = usps.filter(usp => {
+      if (!usp.title && !usp.Title) return true; // Keep items without title
+      const title = (usp.title || usp.Title || '').toLowerCase();
+      return !existingTitles.includes(title);
+    });
     
     return usps.map((usp: any, index: number) => ({
       id: `gen-usp-${Date.now()}-${index}`,
-      title: usp.title,
-      description: usp.description,
-      targetICP: usp.targetICP,
-      valueProposition: usp.valueProposition,
+      title: usp.title || usp.Title,
+      description: usp.description || usp.Description,
+      targetICP: usp.targetICP || usp.TargetICP,
+      valueProposition: usp.valueProposition || usp.ValueProposition,
       isCustomAdded: false
     }));
   } catch (error) {
