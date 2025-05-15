@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Loader2, FileText, BookOpen, BookmarkCheck, PenTool, Plus } from 'lucide-react';
+import { Loader2, FileText, BookOpen, BookmarkCheck, PenTool, Plus, ArrowRight, RefreshCw } from 'lucide-react';
 import { ContentIdea, Keyword } from '@/contexts/MarketingToolContext';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
@@ -244,11 +244,12 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
               <Button 
                 onClick={handleGenerateContent} 
                 variant="default"
-                className="bg-marketing-600 hover:bg-marketing-700 text-white transition-colors"
+                className="bg-marketing-600 hover:bg-marketing-700 text-white transition-all duration-300 flex items-center gap-2 group"
                 disabled={isGenerating}
               >
                 {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Generate Content Ideas
+                <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>
           </CardContent>
@@ -265,9 +266,10 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
               
               <Button 
                 onClick={handleContinue} 
-                className="bg-marketing-600 hover:bg-marketing-700 text-white transition-colors"
+                className="bg-marketing-600 hover:bg-marketing-700 text-white transition-all duration-300 flex items-center gap-2 group"
               >
                 Continue to Publishing
+                <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>
             
@@ -316,9 +318,9 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
               <DialogTrigger asChild>
                 <Button 
                   variant="outline" 
-                  className="flex gap-1 items-center hover:bg-gray-100 transition-colors"
+                  className="flex gap-2 items-center hover:bg-gray-100 transition-all duration-300 group"
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-4 w-4 group-hover:scale-110 transition-transform" />
                   Add Custom Content Idea
                 </Button>
               </DialogTrigger>
@@ -361,6 +363,7 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
                       <option value="Video">Video</option>
                     </select>
                   </div>
+                  
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="targetICP" className="text-right">
                       Target ICP
@@ -376,6 +379,7 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
                       ))}
                     </select>
                   </div>
+                  
                   <div className="grid grid-cols-4 items-start gap-4">
                     <Label htmlFor="targetKeywords" className="text-right pt-2">
                       Target Keywords
@@ -413,6 +417,7 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
                       </div>
                     </div>
                   </div>
+                  
                   <div className="grid grid-cols-4 items-start gap-4">
                     <Label htmlFor="outline" className="text-right pt-2">
                       Content Outline
@@ -450,6 +455,7 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
                       </ul>
                     </div>
                   </div>
+                  
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="estimatedValue" className="text-right">
                       Estimated Value
@@ -471,18 +477,26 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
                   <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className="hover:bg-gray-100 transition-colors">
                     Cancel
                   </Button>
-                  <Button onClick={handleAddCustomContent} className="bg-marketing-600 hover:bg-marketing-700 text-white transition-colors">
+                  <Button 
+                    onClick={handleAddCustomContent} 
+                    className="bg-marketing-600 hover:bg-marketing-700 text-white transition-all duration-300 flex items-center gap-2 group"
+                  >
                     Add Content Idea
+                    <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
             <Button 
               onClick={handleGenerateContent} 
-              className="bg-marketing-600 hover:bg-marketing-700 text-white transition-colors"
+              className="bg-marketing-600 hover:bg-marketing-700 text-white transition-all duration-300 flex items-center gap-2 group"
               disabled={isGenerating}
             >
-              {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isGenerating ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4 group-hover:rotate-180 transition-transform duration-500" />
+              )}
               Generate More Content Ideas
             </Button>
           </div>
@@ -529,8 +543,12 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="hover:bg-gray-100 transition-colors">
               Cancel
             </Button>
-            <Button onClick={handleSaveEdit} className="bg-marketing-600 hover:bg-marketing-700 text-white transition-colors">
+            <Button 
+              onClick={handleSaveEdit} 
+              className="bg-marketing-600 hover:bg-marketing-700 text-white transition-all duration-300 flex items-center gap-2 group"
+            >
               Save Edit Notes
+              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </div>
         </DialogContent>
@@ -547,7 +565,7 @@ interface ContentCardProps {
 
 const ContentCard: React.FC<ContentCardProps> = ({ content, onPublish, onEdit }) => {
   return (
-    <Card className={`${content.published ? "border-marketing-200 bg-marketing-50/30" : ""} ${content.isCustomAdded ? "border-marketing-300" : ""}`}>
+    <Card className={`${content.published ? "border-marketing-200 bg-marketing-50/30" : ""} ${content.isCustomAdded ? "border-marketing-300" : ""} transition-all duration-300 hover:shadow-md`}>
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start gap-2">
           <div className="flex gap-2 items-center">
@@ -604,7 +622,11 @@ const ContentCard: React.FC<ContentCardProps> = ({ content, onPublish, onEdit })
         </div>
       </CardContent>
       <CardFooter className="flex justify-between pt-2">
-        <Button variant="outline" onClick={() => onEdit(content)} className="hover:bg-gray-100 transition-colors">
+        <Button 
+          variant="outline" 
+          onClick={() => onEdit(content)} 
+          className="hover:bg-gray-100 transition-colors"
+        >
           Edit Notes
         </Button>
         {content.published ? (
@@ -617,9 +639,10 @@ const ContentCard: React.FC<ContentCardProps> = ({ content, onPublish, onEdit })
         ) : (
           <Button 
             onClick={() => onPublish(content.id)} 
-            className="bg-marketing-600 hover:bg-marketing-700 text-white transition-colors"
+            className="bg-marketing-600 hover:bg-marketing-700 text-white transition-all duration-300 flex items-center gap-2 group"
           >
             Publish
+            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
           </Button>
         )}
       </CardFooter>

@@ -8,6 +8,7 @@ import { LandingPage } from '@/contexts/MarketingToolContext';
 import LandingPagePreview from '@/components/publish/LandingPagePreview';
 import LandingPageForm from '@/components/publish/LandingPageForm';
 import PublishedContentList from '@/components/publish/PublishedContentList';
+import { ArrowRight } from 'lucide-react';
 
 const PublishStep: React.FC = () => {
   const { 
@@ -75,9 +76,10 @@ const PublishStep: React.FC = () => {
         </Button>
         <Button 
           onClick={() => toast.success('All done! Your marketing toolkit is ready to use.')} 
-          className="bg-marketing-600 hover:bg-marketing-700"
+          className="bg-marketing-600 hover:bg-marketing-700 transition-all duration-300 flex items-center gap-2 group"
         >
           Finish
+          <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
         </Button>
       </div>
     </div>
