@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState } from 'react';
 
 export type Business = {
@@ -35,6 +36,7 @@ export type Geography = {
   marketSize: string;
   growthRate: string;
   competitionLevel: string;
+  whyTarget?: string;
   recommendation: string;
   isCustomAdded?: boolean;
 };

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,6 +23,7 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
     marketSize: '',
     growthRate: '',
     competitionLevel: '',
+    whyTarget: '',
     recommendation: ''
   });
 
@@ -49,7 +51,7 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
   const handleAddCustomGeography = () => {
     if (!newGeography.region || !newGeography.marketSize || !newGeography.growthRate || 
         !newGeography.competitionLevel || !newGeography.recommendation) {
-      toast.error('Please fill all fields');
+      toast.error('Please fill all required fields');
       return;
     }
 
@@ -60,6 +62,7 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
       marketSize: '',
       growthRate: '',
       competitionLevel: '',
+      whyTarget: '',
       recommendation: ''
     });
     toast.success('Custom geography added successfully');
@@ -77,20 +80,20 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
     <div className="container py-8 animate-fade-in">
       <h1 className="text-3xl font-bold text-center mb-2">Target Geographies</h1>
       <p className="text-center text-gray-600 mb-8">
-        Identify the most promising regions for your business expansion
+        Identify the most promising countries for your business expansion
       </p>
 
       {geographies.length === 0 ? (
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Generate Target Geographies</CardTitle>
+            <CardTitle>Generate Target Countries</CardTitle>
             <CardDescription>
-              We'll analyze your business and industry to recommend the best regions to target
+              We'll analyze your business and industry to recommend the best countries to target
             </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-gray-600 mb-4">
-              Our AI will identify promising regions based on market size, growth potential, and competition level.
+              Our AI will identify promising countries based on market size, growth potential, and competition level.
             </p>
             <div className="flex justify-between items-center">
               <Button 
@@ -107,7 +110,7 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
                   disabled={isGenerating}
                 >
                   {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Generate Geographies
+                  Generate Countries
                 </Button>
               </div>
             </div>
@@ -136,6 +139,15 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
                     </div>
                     <div>{geo.competitionLevel}</div>
                   </div>
+                  
+                  {/* Why Target This Geography Section */}
+                  {geo.whyTarget && (
+                    <div className="bg-marketing-50 p-3 rounded-md">
+                      <h4 className="font-medium text-sm mb-1 text-marketing-700">Why Target This Country:</h4>
+                      <p className="text-sm text-gray-700">{geo.whyTarget}</p>
+                    </div>
+                  )}
+                  
                   <div className="bg-marketing-50 p-3 rounded-md">
                     <h4 className="font-medium text-sm mb-1 text-marketing-700">Recommendation:</h4>
                     <p className="text-sm text-gray-700">{geo.recommendation}</p>
@@ -157,7 +169,7 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
               ) : (
                 <RefreshCw className="h-12 w-12 text-gray-400 mb-4" />
               )}
-              <p className="text-gray-600 font-medium">Generate More Geographies</p>
+              <p className="text-gray-600 font-medium">Generate More Countries</p>
             </Button>
             
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -165,7 +177,7 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
                 <Card className="border-dashed border-2 border-gray-300 hover:border-marketing-400 cursor-pointer flex flex-col items-center justify-center min-h-[200px]">
                   <CardContent className="flex flex-col items-center justify-center p-6">
                     <Plus className="h-12 w-12 text-gray-400 mb-4" />
-                    <p className="text-gray-600 font-medium">Add Custom Geography</p>
+                    <p className="text-gray-600 font-medium">Add Custom Country</p>
                   </CardContent>
                 </Card>
               </DialogTrigger>
@@ -191,20 +203,20 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
           <DialogHeader>
             <DialogTitle>Add Custom Geography</DialogTitle>
             <DialogDescription>
-              Add a custom target region for your marketing strategy.
+              Add a custom target country for your marketing strategy.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="region" className="text-right">
-                Region
+                Country
               </Label>
               <Input
                 id="region"
                 value={newGeography.region}
                 onChange={(e) => setNewGeography({ ...newGeography, region: e.target.value })}
                 className="col-span-3"
-                placeholder="e.g., North America"
+                placeholder="e.g., Canada"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -233,7 +245,7 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="competitionLevel" className="text-right">
-                Competition Level
+                Competition
               </Label>
               <Input
                 id="competitionLevel"
@@ -241,6 +253,18 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
                 onChange={(e) => setNewGeography({ ...newGeography, competitionLevel: e.target.value })}
                 className="col-span-3"
                 placeholder="e.g., Medium"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="whyTarget" className="text-right">
+                Why Target
+              </Label>
+              <Textarea
+                id="whyTarget"
+                value={newGeography.whyTarget}
+                onChange={(e) => setNewGeography({ ...newGeography, whyTarget: e.target.value })}
+                className="col-span-3"
+                placeholder="Why this country is a good target for your business"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">

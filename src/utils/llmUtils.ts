@@ -1,3 +1,4 @@
+
 import { toast } from '@/components/ui/use-toast';
 import { Business, ICP, USP, Geography, Keyword, ContentIdea } from '@/contexts/MarketingToolContext';
 
@@ -224,26 +225,28 @@ export async function generateUSPs(business: Business, icps: ICP[], existingUSPs
 // Generate Geographies based on business info
 export async function generateGeographies(business: Business, existingGeographies: Geography[] = []): Promise<Geography[]> {
   const existingRegions = existingGeographies.map(geo => geo.region).join(", ");
-  const prompt = `Generate 3 target geographical markets for a ${business.industry} business named "${business.name}" that ${business.description}. 
+  const prompt = `Generate 3 specific target countries for a ${business.industry} business named "${business.name}" that ${business.description}. 
   Their main problem to solve is "${business.mainProblem}".
 
-  ${existingGeographies.length > 0 ? `They already have these regions: ${existingRegions}. Generate NEW ones that are different from these.` : ''}
+  ${existingGeographies.length > 0 ? `They already have these regions: ${existingRegions}. Generate NEW countries that are different from these.` : ''}
 
   Each geography should include:
-  - A region name (e.g., "North America")
-  - The market size
-  - Growth rate
-  - Competition level
-  - A strategic recommendation for entering that market
+  - A specific country name (e.g., "United States", "Singapore", "Germany")
+  - The market size for this specific country
+  - Growth rate in this country
+  - Competition level in this country
+  - A persuasive explanation of why this country should be targeted (2-3 sentences)
+  - A strategic recommendation for entering that specific country's market
 
   Format the response as a JSON array with the following structure:
   [
     {
       "id": "1",
-      "region": "Region name here",
+      "region": "Specific country name here",
       "marketSize": "Market size here",
       "growthRate": "Growth rate here",
       "competitionLevel": "Competition level here",
+      "whyTarget": "Explanation of why this country should be targeted",
       "recommendation": "Recommendation here"
     }
   ]
@@ -305,6 +308,8 @@ export async function generateGeographies(business: Business, existingGeographie
       .map((geo, index) => ({
         ...geo,
         id: `llm-${Date.now()}-${index}`,
+        // Ensure whyTarget exists, use a default if not present
+        whyTarget: geo.whyTarget || "This geography aligns with your business goals and presents a strong market opportunity."
       }));
     
     console.log(`Generated ${newGeographies.length} new unique geographies`);
