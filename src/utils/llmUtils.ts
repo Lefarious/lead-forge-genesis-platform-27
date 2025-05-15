@@ -1,3 +1,4 @@
+
 export const generateGeographies = async (business: any, existingGeographies: any[] = []): Promise<any[]> => {
   try {
     const apiKey = localStorage.getItem('openai_api_key');
@@ -165,6 +166,98 @@ export const generateContentIdeas = async (
     }));
   } catch (error) {
     console.error('Content generation error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Generate Ideal Customer Profiles (ICPs) based on business information
+ * @param business Business information object
+ * @param count Optional number of ICPs to generate (default: 3)
+ * @param existingICPs Optional array of existing ICPs to avoid duplicates
+ * @returns Promise with array of generated ICPs
+ */
+export const generateICPs = async (
+  business: any,
+  count: number = 3,
+  existingICPs: any[] = []
+): Promise<any[]> => {
+  try {
+    const apiKey = localStorage.getItem('openai_api_key');
+    if (!apiKey) {
+      throw new Error('API key not found');
+    }
+
+    // Extract existing ICP titles to avoid duplicates
+    const existingTitles = existingICPs.map(icp => icp.title.toLowerCase());
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `You are an expert marketer tasked with identifying ideal customer profiles (ICPs) for a business.
+            Based on the provided business information, create ${count} distinct and detailed ICPs.
+            For each ICP, provide:
+            - Title (a descriptive name for this customer segment)
+            - Description (brief overview of this customer type)
+            - Demographics (age, gender, location, job titles, income level, company size, etc., as relevant)
+            - Pain Points (list of 3-5 specific problems or challenges this ICP faces that the business can solve)
+            - Goals (list of 3-5 specific objectives or desires this ICP has that the business can help achieve)
+            If existing ICPs are provided, ensure your new profiles are distinct from them.
+            Respond in JSON format only with an array of ICP objects.`
+          },
+          {
+            role: 'user',
+            content: `Business Name: ${business.name || 'N/A'}
+            Industry: ${business.industry || 'N/A'}
+            Description: ${business.description || 'N/A'}
+            Problem: ${business.problem || 'N/A'}${existingTitles.length > 0 ? `\n\nExisting ICP Titles (do not duplicate): ${existingTitles.join(', ')}` : ''}`
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 2000
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+    }
+
+    const responseData = await response.json();
+    console.log('ICP generation response:', responseData);
+
+    const contentString = responseData.choices[0].message.content;
+    const parsedContent = JSON.parse(contentString);
+    
+    // Ensure proper array format
+    let icps = Array.isArray(parsedContent) ? parsedContent : [parsedContent];
+    
+    // Filter out ICPs with titles that already exist in existingICPs
+    if (existingTitles.length > 0) {
+      icps = icps.filter(icp => 
+        !existingTitles.includes((icp.title || '').toLowerCase())
+      );
+    }
+
+    // Format and return the ICPs with IDs
+    return icps.map((icp: any, index: number) => ({
+      id: `gen-icp-${Date.now()}-${index}`,
+      title: icp.title,
+      description: icp.description,
+      demographics: icp.demographics,
+      painPoints: Array.isArray(icp.painPoints) ? icp.painPoints : [icp.painPoints],
+      goals: Array.isArray(icp.goals) ? icp.goals : [icp.goals],
+      isCustomAdded: false
+    }));
+  } catch (error) {
+    console.error('ICP generation error:', error);
     throw error;
   }
 };
