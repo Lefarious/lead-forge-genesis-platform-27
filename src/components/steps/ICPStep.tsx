@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import { ICP } from '@/contexts/MarketingToolContext';
 import { generateICPs } from '@/utils/llmUtils';
 import ApiKeyInput from '@/components/common/ApiKeyInput';
 import { formatDemographics } from '@/lib/utils';
+import { DemographicsDisplay } from '@/components/common/DemographicsDisplay';
 
 interface ICPStepProps {}
 
@@ -221,7 +223,18 @@ const ICPStep: React.FC<ICPStepProps> = () => {
                   <div>
                     <h4 className="font-medium text-sm mb-1">Demographics:</h4>
                     <div className="text-sm text-gray-600">
-                      {formatDemographics(icp.demographics)}
+                      {typeof icp.demographics === 'string' ? (
+                        (() => {
+                          const formattedData = formatDemographics(icp.demographics);
+                          return typeof formattedData === 'string' ? (
+                            formattedData
+                          ) : (
+                            <DemographicsDisplay data={formattedData} />
+                          );
+                        })()
+                      ) : (
+                        'No demographics data'
+                      )}
                     </div>
                   </div>
                   <div>
