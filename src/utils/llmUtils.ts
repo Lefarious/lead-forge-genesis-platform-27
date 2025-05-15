@@ -1,4 +1,3 @@
-
 export const generateGeographies = async (business: any, existingGeographies: any[] = []): Promise<any[]> => {
   try {
     const apiKey = localStorage.getItem('openai_api_key');
@@ -104,10 +103,14 @@ export const generateICPs = async (business: any, existingICPs: any[] = []): Pro
             - Title (concise name for this customer segment)
             - Description (2-3 sentences about this customer type)
             - Demographics (as a JSON object with companySize, industries, regions, jobTitles, and technologyAdoption)
+            - BlueOceanScore (a number from 1-10, where 1 is a "red ocean" with high competition and 10 is a "blue ocean" with little competition)
+            - ReachMethods (3-5 specific channels or methods to effectively reach this ICP)
+            - ProductSuggestions (3-5 specific ways to tailor or tweak products to better meet this ICP's needs)
             - Pain Points (3-5 specific problems this ICP faces that the business could solve)
             - Goals (3-5 key objectives this ICP is trying to achieve)
             Ensure these are diverse, focused profiles that don't overlap too much with each other.
             Make sure none of the ICPs duplicate existing ones.
+            ALWAYS provide complete demographic information, even if it needs to be generalized.
             Respond in JSON format only.`
           },
           {
@@ -145,6 +148,9 @@ export const generateICPs = async (business: any, existingICPs: any[] = []): Pro
       title: icp.title,
       description: icp.description,
       demographics: JSON.stringify(icp.demographics),
+      blueOceanScore: icp.blueOceanScore || 5, // Default to 5 if not provided
+      reachMethods: Array.isArray(icp.reachMethods) ? icp.reachMethods : [icp.reachMethods],
+      productSuggestions: Array.isArray(icp.productSuggestions) ? icp.productSuggestions : [icp.productSuggestions],
       painPoints: Array.isArray(icp.painPoints) ? icp.painPoints : [icp.painPoints],
       goals: Array.isArray(icp.goals) ? icp.goals : [icp.goals],
       isCustomAdded: false
@@ -462,5 +468,82 @@ export const generateContentIdeas = async (
   } catch (error) {
     console.error('Content generation error:', error);
     throw error;
+  }
+};
+
+export const validateCustomICP = async (icp: any, business: any): Promise<{isValid: boolean, feedback: string}> => {
+  try {
+    const apiKey = localStorage.getItem('openai_api_key');
+    if (!apiKey) {
+      throw new Error('API key not found');
+    }
+    
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `You are an expert marketing strategist who evaluates proposed Ideal Customer Profiles (ICPs) for businesses.
+            Your task is to determine if a proposed ICP is viable and realistic for the given business.
+            Consider the following criteria:
+            1. Alignment with the business's products/services
+            2. Market size and accessibility
+            3. Coherence of the ICP's characteristics
+            4. Feasibility of targeting this segment
+            
+            Return a JSON object with:
+            - isValid: boolean (true if the ICP seems valid, false if it's extremely improbable)
+            - feedback: string (constructive feedback explaining your assessment)
+            
+            Be conservative in rejecting ICPs - only mark as invalid if there are serious problems.`
+          },
+          {
+            role: 'user',
+            content: `Business Information:
+            Name: ${business.name}
+            Industry: ${business.industry}
+            Description: ${business.description}
+            
+            Proposed ICP:
+            Title: ${icp.title}
+            Description: ${icp.description}
+            Demographics: ${icp.demographics}
+            Pain Points: ${icp.painPoints.join(', ')}
+            Goals: ${icp.goals.join(', ')}
+            `
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 500
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+    }
+
+    const responseData = await response.json();
+    console.log('ICP validation response:', responseData);
+
+    const contentString = responseData.choices[0].message.content;
+    const parsedContent = JSON.parse(contentString);
+    
+    return {
+      isValid: parsedContent.isValid,
+      feedback: parsedContent.feedback
+    };
+  } catch (error) {
+    console.error('ICP validation error:', error);
+    // Default to valid in case of error
+    return {
+      isValid: true,
+      feedback: "Couldn't validate due to an error, proceeding with caution."
+    };
   }
 };

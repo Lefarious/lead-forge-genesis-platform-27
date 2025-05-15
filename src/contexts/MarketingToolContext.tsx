@@ -17,6 +17,9 @@ export type ICP = {
   title: string;
   description: string;
   demographics: string;
+  blueOceanScore?: number;
+  reachMethods?: string[];
+  productSuggestions?: string[];
   painPoints: string[];
   goals: string[];
   isCustomAdded?: boolean;
