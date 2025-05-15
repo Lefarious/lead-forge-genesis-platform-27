@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
@@ -155,17 +156,6 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Card className="border-dashed border-2 border-gray-300 hover:border-marketing-400 cursor-pointer flex flex-col items-center justify-center min-h-[200px]">
-                  <CardContent className="flex flex-col items-center justify-center p-6">
-                    <Plus className="h-12 w-12 text-gray-400 mb-4" />
-                    <p className="text-gray-600 font-medium">Add Custom Geography</p>
-                  </CardContent>
-                </Card>
-              </DialogTrigger>
-            </Dialog>
-            
             <Button 
               variant="outline"
               className="border-dashed border-2 border-gray-300 hover:border-marketing-400 flex flex-col items-center justify-center min-h-[200px] p-6"
@@ -179,6 +169,17 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
               )}
               <p className="text-gray-600 font-medium">Generate More Geographies</p>
             </Button>
+            
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Card className="border-dashed border-2 border-gray-300 hover:border-marketing-400 cursor-pointer flex flex-col items-center justify-center min-h-[200px]">
+                  <CardContent className="flex flex-col items-center justify-center p-6">
+                    <Plus className="h-12 w-12 text-gray-400 mb-4" />
+                    <p className="text-gray-600 font-medium">Add Custom Geography</p>
+                  </CardContent>
+                </Card>
+              </DialogTrigger>
+            </Dialog>
           </div>
           
           <div className="flex justify-between">
