@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/use-toast';
-import { Loader2, MapPin, Plus, RefreshCw } from 'lucide-react';
+import { Loader2, MapPin, Plus, RefreshCw, TrendingUp, BadgePercent } from 'lucide-react';
 import { Geography } from '@/contexts/MarketingToolContext';
 import { generateGeographies } from '@/utils/llmUtils';
 import ApiKeyInput from '@/components/common/ApiKeyInput';
@@ -24,8 +23,25 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
     growthRate: '',
     competitionLevel: '',
     whyTarget: '',
-    recommendation: ''
+    recommendation: '',
+    profitabilityRating: '',
+    pricingPower: '',
+    brandPersonality: ''
   });
+
+  // Helper function for profitability rating color
+  const getProfitabilityColor = (rating: string) => {
+    switch (rating?.toLowerCase()) {
+      case 'high':
+        return 'text-green-600';
+      case 'medium':
+        return 'text-yellow-600';
+      case 'low':
+        return 'text-red-600';
+      default:
+        return 'text-gray-600';
+    }
+  };
 
   const handleGenerateGeographies = async () => {
     if (!localStorage.getItem('openai_api_key')) {
@@ -55,7 +71,15 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
       return;
     }
 
-    addCustomGeography(newGeography as Geography);
+    // Initialize new properties with default values if they're not provided
+    const newGeoWithDefaults = {
+      ...newGeography,
+      profitabilityRating: newGeography.profitabilityRating || 'Medium',
+      pricingPower: newGeography.pricingPower || 'Moderate',
+      brandPersonality: newGeography.brandPersonality || 'Professional'
+    };
+    
+    addCustomGeography(newGeoWithDefaults as Geography);
     setIsAddDialogOpen(false);
     setNewGeography({
       region: '',
@@ -63,7 +87,10 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
       growthRate: '',
       competitionLevel: '',
       whyTarget: '',
-      recommendation: ''
+      recommendation: '',
+      profitabilityRating: '',
+      pricingPower: '',
+      brandPersonality: ''
     });
     toast.success('Custom geography added successfully');
   };
@@ -138,6 +165,19 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
                       <span className="font-medium">Competition:</span>
                     </div>
                     <div>{geo.competitionLevel}</div>
+                    
+                    {/* New fields */}
+                    <div>
+                      <span className="font-medium">Profitability:</span>
+                    </div>
+                    <div className={getProfitabilityColor(geo.profitabilityRating)}>
+                      {geo.profitabilityRating || 'Not specified'}
+                    </div>
+                    
+                    <div>
+                      <span className="font-medium">Pricing Power:</span>
+                    </div>
+                    <div>{geo.pricingPower || 'Not specified'}</div>
                   </div>
                   
                   {/* Why Target This Geography Section */}
@@ -148,9 +188,38 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
                     </div>
                   )}
                   
+                  {/* Brand Personality Section */}
+                  {geo.brandPersonality && (
+                    <div className="bg-blue-50 p-3 rounded-md">
+                      <h4 className="font-medium text-sm mb-1 text-blue-700">
+                        <span className="flex items-center gap-1">
+                          <BadgePercent className="h-4 w-4" /> Brand Personality
+                        </span>
+                      </h4>
+                      <p className="text-sm text-gray-700">{geo.brandPersonality}</p>
+                    </div>
+                  )}
+                  
                   <div className="bg-marketing-50 p-3 rounded-md">
                     <h4 className="font-medium text-sm mb-1 text-marketing-700">Recommendation:</h4>
                     <p className="text-sm text-gray-700">{geo.recommendation}</p>
+                  </div>
+                  
+                  {/* Market Metrics Section - New */}
+                  <div className="bg-green-50 p-3 rounded-md">
+                    <h4 className="font-medium text-sm mb-1 text-green-700">
+                      <span className="flex items-center gap-1">
+                        <TrendingUp className="h-4 w-4" /> Market Metrics
+                      </span>
+                    </h4>
+                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-sm mt-1">
+                      <div>Pricing Power:</div>
+                      <div>{geo.pricingPower || 'Not specified'}</div>
+                      <div>Profitability:</div>
+                      <div className={getProfitabilityColor(geo.profitabilityRating)}>
+                        {geo.profitabilityRating || 'Not specified'}
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -277,6 +346,44 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
                 onChange={(e) => setNewGeography({ ...newGeography, recommendation: e.target.value })}
                 className="col-span-3"
                 placeholder="Strategic recommendation for this market"
+              />
+            </div>
+            
+            {/* New form fields */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="profitabilityRating" className="text-right">
+                Profitability
+              </Label>
+              <Input
+                id="profitabilityRating"
+                value={newGeography.profitabilityRating || ''}
+                onChange={(e) => setNewGeography({ ...newGeography, profitabilityRating: e.target.value })}
+                className="col-span-3"
+                placeholder="e.g., High, Medium, Low"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="pricingPower" className="text-right">
+                Pricing Power
+              </Label>
+              <Input
+                id="pricingPower"
+                value={newGeography.pricingPower || ''}
+                onChange={(e) => setNewGeography({ ...newGeography, pricingPower: e.target.value })}
+                className="col-span-3"
+                placeholder="e.g., Strong, Moderate, Weak"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="brandPersonality" className="text-right">
+                Brand Personality
+              </Label>
+              <Textarea
+                id="brandPersonality"
+                value={newGeography.brandPersonality || ''}
+                onChange={(e) => setNewGeography({ ...newGeography, brandPersonality: e.target.value })}
+                className="col-span-3"
+                placeholder="e.g., Professional, Innovative, Traditional"
               />
             </div>
           </div>

@@ -1,3 +1,4 @@
+
 export const generateGeographies = async (business: any, existingGeographies: any[] = []): Promise<any[]> => {
   try {
     const apiKey = localStorage.getItem('openai_api_key');
@@ -27,6 +28,9 @@ export const generateGeographies = async (business: any, existingGeographies: an
             - Competition Level (High, Medium, Low)
             - A brief explanation of why this country is a good target (Why Target)
             - A strategic recommendation for this market (Recommendation)
+            - Pricing Power (Strong, Moderate, Weak) - how much pricing leverage the business would have in this market
+            - Profitability Rating (High, Medium, Low) - expected profitability in this market
+            - Brand Personality (brief description) - what brand traits would resonate best in this market
             Ensure the countries are diverse and not already in the existing list.
             Respond in JSON format only.`
           },
@@ -36,7 +40,7 @@ export const generateGeographies = async (business: any, existingGeographies: an
           }
         ],
         temperature: 0.7,
-        max_tokens: 1000
+        max_tokens: 1200
       })
     });
 
@@ -63,6 +67,9 @@ export const generateGeographies = async (business: any, existingGeographies: an
       competitionLevel: geo.Competition || geo.competitionLevel,
       whyTarget: geo['Why Target'] || geo.whyTarget,
       recommendation: geo.Recommendation || geo.recommendation,
+      pricingPower: geo['Pricing Power'] || geo.pricingPower,
+      profitabilityRating: geo['Profitability Rating'] || geo.profitabilityRating,
+      brandPersonality: geo['Brand Personality'] || geo.brandPersonality,
       isCustomAdded: false
     }));
   } catch (error) {
