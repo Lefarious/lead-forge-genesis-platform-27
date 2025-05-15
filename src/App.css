@@ -13,10 +13,10 @@
   transition: filter 300ms;
 }
 .logo:hover {
-  filter: drop-shadow(0 0 2em rgba(139, 92, 246, 0.6));
+  filter: drop-shadow(0 0 2em rgba(9, 160, 71, 0.6));
 }
 .logo.react:hover {
-  filter: drop-shadow(0 0 2em rgba(139, 92, 246, 0.6));
+  filter: drop-shadow(0 0 2em rgba(9, 160, 71, 0.6));
 }
 
 @keyframes logo-spin {
@@ -58,13 +58,13 @@
 
 /* Custom button styles */
 .quantum-button {
-  background: linear-gradient(135deg, #843dff 0%, #7916ff 100%);
+  background: linear-gradient(135deg, #09a047 0%, #078239 100%);
   transition: all 0.3s ease;
 }
 
 .quantum-button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 0 15px rgba(132, 61, 255, 0.5);
+  box-shadow: 0 0 15px rgba(9, 160, 71, 0.5);
 }
 
 /* Custom card styles */
@@ -79,7 +79,7 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Shiny purple accent */
+/* Shiny green accent */
 .quantum-accent {
   position: relative;
   overflow: hidden;
