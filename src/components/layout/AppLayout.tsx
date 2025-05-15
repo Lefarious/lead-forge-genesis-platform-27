@@ -46,7 +46,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         <div className="container flex justify-between items-center">
           <div className="flex items-center">
             <div className={cn("font-bold text-2xl bg-clip-text text-transparent", 
-              isDarkMode ? "bg-gradient-to-r from-green-400 to-green-600" : "bg-gradient-to-r from-marketing-600 to-marketing-800")}>
+              isDarkMode ? "bg-gradient-to-r from-blue-400 to-blue-600" : "bg-gradient-to-r from-marketing-600 to-marketing-800")}>
               Inkwell AI
             </div>
             <div className="hidden md:flex ml-10 gap-2">
@@ -64,7 +64,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                       "px-3 py-1 rounded-md text-sm font-medium transition-colors",
                       isDarkMode
                         ? currentStep === stepNumber 
-                          ? "bg-green-900 text-green-100" 
+                          ? "bg-blue-900 text-blue-100" 
                           : currentStep > stepNumber 
                             ? "text-gray-300 hover:bg-gray-800" 
                             : isClickable
