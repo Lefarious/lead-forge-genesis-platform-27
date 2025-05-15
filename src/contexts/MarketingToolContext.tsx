@@ -6,9 +6,9 @@ import { KeywordStats } from '@/components/keywords/KeywordDataVisualizer';
 export interface BusinessInfo {
   name: string;
   industry: string;
-  description: string;  // Added this property
-  mainProblem: string;  // Added this property
-  products: string[];   // Added this property
+  description: string;
+  mainProblem: string;
+  products: string[];
   targetAudience: string;
   mainSolution: string;
   existingCustomers: string;
@@ -20,10 +20,12 @@ export interface ICP {
   id: string;
   title: string;
   description: string;
-  demographics?: string;
-  needs?: string;
-  painPoints?: string;
-  goals?: string;
+  demographics: string;
+  painPoints: string[];
+  goals: string[];
+  blueOceanScore: number;
+  reachMethods: string[];
+  productSuggestions: string[];
   isCustomAdded?: boolean;
 }
 

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
@@ -166,7 +165,6 @@ const ICPStep: React.FC<ICPStepProps> = () => {
     } else {
       addCustomICP({
         ...cleanedFormData,
-        id: `custom-${Date.now()}`,
       });
       toast.success('Custom ICP added!');
     }
