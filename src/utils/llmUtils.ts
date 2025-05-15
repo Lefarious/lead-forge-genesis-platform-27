@@ -297,10 +297,18 @@ export async function generateGeographies(business: Business, existingGeographie
       throw new Error('Invalid response format: Expected an array of geographies');
     }
     
-    return geographiesArray.map((geo: any, index: number) => ({
-      ...geo,
-      id: geo.id || `llm-${Date.now()}-${index}`,
-    }));
+    // Generate unique IDs and filter out any potential duplicates based on region name
+    const existingRegionNames = new Set(existingGeographies.map(geo => geo.region.toLowerCase().trim()));
+    
+    const newGeographies = geographiesArray
+      .filter(geo => !existingRegionNames.has(geo.region.toLowerCase().trim()))
+      .map((geo, index) => ({
+        ...geo,
+        id: `llm-${Date.now()}-${index}`,
+      }));
+    
+    console.log(`Generated ${newGeographies.length} new unique geographies`);
+    return newGeographies;
   } catch (error: any) {
     const errorMessage = error?.message || 'Unknown error occurred';
     console.error('Failed to generate geographies:', errorMessage);

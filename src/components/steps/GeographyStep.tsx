@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
@@ -34,20 +33,11 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
 
     setIsGenerating(true);
     try {
-      const generatedGeographies = await generateGeographies(business);
+      // Pass existing geographies to prevent duplication
+      const generatedGeographies = await generateGeographies(business, geographies);
       
-      // Ensure unique keys by modifying the IDs of the new geographies
-      const existingIds = new Set(geographies.map(geo => geo.id));
-      const uniqueGeographies = generatedGeographies.map(geo => {
-        // If this ID already exists in our list, create a new unique ID
-        if (existingIds.has(geo.id)) {
-          return { ...geo, id: `gen-${Date.now()}-${Math.random().toString(36).substring(2, 9)}` };
-        }
-        return geo;
-      });
-      
-      setGeographies([...geographies, ...uniqueGeographies]); // Append new geographies
-      toast.success('Target geographies generated!');
+      setGeographies([...geographies, ...generatedGeographies]); // Append new geographies
+      toast.success('New target geographies generated!');
     } catch (error) {
       toast.error('Failed to generate geographies');
       console.error(error);
