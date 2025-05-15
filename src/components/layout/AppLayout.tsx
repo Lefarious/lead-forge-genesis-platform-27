@@ -6,6 +6,8 @@ import { toast } from 'sonner';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import ChatButton from '@/components/chat/ChatButton';
+import ChatInterface from '@/components/chat/ChatInterface';
 
 type AppLayoutProps = {
   children: React.ReactNode;
@@ -85,14 +87,17 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               })}
             </div>
           </div>
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={toggleTheme}
-            className="rounded-full"
-          >
-            {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </Button>
+          <div className="flex items-center gap-2">
+            <ChatButton />
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={toggleTheme}
+              className="rounded-full"
+            >
+              {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Button>
+          </div>
         </div>
       </header>
       <main className="flex-1">
@@ -103,6 +108,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           &copy; {new Date().getFullYear()} Marketing AI. All rights reserved.
         </div>
       </footer>
+      <ChatInterface />
     </div>
   );
 };
