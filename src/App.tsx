@@ -8,10 +8,14 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { useTheme } from "./contexts/ThemeContext";
 
+console.log('Loading App.tsx');
+
 const queryClient = new QueryClient();
 
 const App = () => {
+  console.log('Rendering App component');
   const { isDarkMode } = useTheme();
+  console.log('Theme loaded, isDarkMode:', isDarkMode);
   
   return (
     <QueryClientProvider client={queryClient}>

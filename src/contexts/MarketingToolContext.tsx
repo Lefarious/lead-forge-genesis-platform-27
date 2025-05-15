@@ -45,8 +45,6 @@ export interface Geography {
   marketSize: string;
   competitionLevel: string;
   targetICPs: string[];
-  isCustomAdded?: boolean;
-  // Add missing properties
   region: string;
   growthRate: string;
   recommendation: string;
@@ -54,6 +52,7 @@ export interface Geography {
   profitabilityRating?: string;
   pricingPower?: string;
   brandPersonality?: string;
+  isCustomAdded?: boolean;
 }
 
 export interface ContentIdea {
@@ -63,13 +62,12 @@ export interface ContentIdea {
   type: string;
   targetICP: string;
   keywords: string[];
-  published?: boolean;
-  publishLink?: string;
-  isCustomAdded?: boolean;
-  // Add missing properties
   targetKeywords: string[];
   outline: string[];
   estimatedValue: string;
+  published?: boolean;
+  publishLink?: string;
+  isCustomAdded?: boolean;
 }
 
 export interface PublishedContent {
@@ -176,7 +174,6 @@ export interface MarketingToolContextType {
   selectedKeywordStats: KeywordStats | null;
   setKeywordStats: (stats: KeywordStats[]) => void;
   setSelectedKeywordStats: (stats: KeywordStats | null) => void;
-  // Add these missing methods to fix the errors
   setBusinessInfo: (businessInfo: BusinessInfo) => void;
   setICPs: (icps: ICP[]) => void;
   addCustomICP: (icp: Omit<ICP, 'id'>) => void;
@@ -216,7 +213,6 @@ export const MarketingToolProvider: React.FC<{ children: React.ReactNode }> = ({
     setCompetitors([...competitors, newCompetitor]);
   };
 
-  // Add alias methods to fix the errors
   const setBusinessInfo = (businessInfo: BusinessInfo) => {
     setBusiness(businessInfo);
   };
@@ -259,7 +255,6 @@ export const MarketingToolProvider: React.FC<{ children: React.ReactNode }> = ({
     setLandingPage(prev => ({ ...prev, ...updates }));
   };
 
-  // Keep the existing methods
   const updateCompetitor = (id: string, updates: Partial<Competitor>) => {
     setCompetitors(competitors.map(competitor => competitor.id === id ? { ...competitor, ...updates } : competitor));
   };
@@ -445,7 +440,6 @@ export const MarketingToolProvider: React.FC<{ children: React.ReactNode }> = ({
     selectedKeywordStats,
     setKeywordStats,
     setSelectedKeywordStats,
-    // Add these to the context value
     setBusinessInfo,
     setICPs,
     addCustomICP,
