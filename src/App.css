@@ -1,3 +1,4 @@
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -12,10 +13,10 @@
   transition: filter 300ms;
 }
 .logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+  filter: drop-shadow(0 0 2em rgba(139, 92, 246, 0.6));
 }
 .logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+  filter: drop-shadow(0 0 2em rgba(139, 92, 246, 0.6));
 }
 
 @keyframes logo-spin {
@@ -35,8 +36,68 @@
 
 .card {
   padding: 2em;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.dark .card:hover {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
 }
 
 .read-the-docs {
   color: #888;
+}
+
+.dark .read-the-docs {
+  color: #aaa;
+}
+
+/* Custom button styles */
+.quantum-button {
+  background: linear-gradient(135deg, #843dff 0%, #7916ff 100%);
+  transition: all 0.3s ease;
+}
+
+.quantum-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 15px rgba(132, 61, 255, 0.5);
+}
+
+/* Custom card styles */
+.quantum-card {
+  border-radius: var(--radius);
+  transition: all 0.3s ease;
+}
+
+.dark .quantum-card {
+  background-color: rgba(30, 30, 40, 0.6);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Shiny purple accent */
+.quantum-accent {
+  position: relative;
+  overflow: hidden;
+}
+
+.quantum-accent::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  transform: rotate(45deg);
+  pointer-events: none;
+  z-index: 2;
 }
