@@ -1,4 +1,3 @@
-
 import { toast } from '@/components/ui/use-toast';
 import { Business, ICP, USP, Geography, Keyword, ContentIdea } from '@/contexts/MarketingToolContext';
 
@@ -322,20 +321,43 @@ export async function generateGeographies(business: Business, existingGeographie
   }
 }
 
-// Generate keywords based on business, ICPs, and USPs
-export async function generateKeywords(business: Business, icps: ICP[], usps: USP[], existingKeywords: Keyword[] = []): Promise<Keyword[]> {
+// Generate keywords based on business, ICPs, USPs, geographies
+export async function generateKeywords(
+  business: Business, 
+  icps: ICP[], 
+  usps: USP[], 
+  existingKeywords: Keyword[] = [],
+  geographies: Geography[] = []
+): Promise<Keyword[]> {
   const existingTerms = existingKeywords.map(kw => kw.term).join(", ");
-  const prompt = `Generate 3 target keywords for a ${business.industry} business named "${business.name}" that ${business.description}. 
+  const keyICPs = icps.slice(0, 3).map(icp => icp.title).join(", ");
+  const keyUSPs = usps.slice(0, 3).map(usp => usp.title).join(", ");
+  const keyGeos = geographies && geographies.length > 0 
+    ? geographies.slice(0, 3).map(geo => geo.region).join(", ") 
+    : "global market";
+  
+  console.log(`Generating keywords with existing terms: ${existingTerms}`);
+  console.log(`Using ICPs: ${keyICPs}`);
+  console.log(`Using USPs: ${keyUSPs}`);
+  console.log(`Using Geographies: ${keyGeos}`);
+  
+  const prompt = `Generate 3 highly targeted keywords for a ${business.industry} business named "${business.name}" that ${business.description}. 
   Their main problem to solve is "${business.mainProblem}".
 
-  ${existingKeywords.length > 0 ? `They already have these keywords: ${existingTerms}. Generate NEW ones that are different from these.` : ''}
+  They are targeting these customer profiles: ${keyICPs}.
+  Their unique selling points include: ${keyUSPs}.
+  They are focusing on these geographic markets: ${keyGeos}.
+
+  ${existingKeywords.length > 0 
+    ? `They already have these keywords: ${existingTerms}. Generate NEW keywords that are different from these and more specific. Focus on long-tail keywords that might have less competition.` 
+    : 'Focus on a mix of high-volume and niche keywords that would be valuable for their business.'}
 
   Each keyword should include:
-  - The term (e.g., "AI Marketing Solutions")
+  - The term (e.g., "AI Marketing Solutions for Enterprise")
   - Estimated search volume
   - Keyword difficulty
   - Relevance to business
-  - Related ICP
+  - Related ICP (choose one from: ${keyICPs})
 
   Format the response as a JSON array with the following structure:
   [
@@ -377,7 +399,15 @@ export async function generateKeywords(business: Business, icps: ICP[], usps: US
       throw new Error('Invalid response format: Expected an array of keywords');
     }
     
-    return keywordsArray.map((keyword: any, index: number) => ({
+    // Filter out any duplicates from existing keywords
+    const existingTermsLower = existingKeywords.map(kw => kw.term.toLowerCase().trim());
+    const filteredKeywords = keywordsArray.filter(
+      keyword => !existingTermsLower.includes(keyword.term.toLowerCase().trim())
+    );
+    
+    console.log(`Generated ${keywordsArray.length} keywords, ${filteredKeywords.length} are unique`);
+    
+    return filteredKeywords.map((keyword: any, index: number) => ({
       ...keyword,
       id: keyword.id || `llm-${Date.now()}-${index}`,
     }));

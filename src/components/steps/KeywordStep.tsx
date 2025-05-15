@@ -10,33 +10,10 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { generateKeywords } from '@/utils/llmUtils';
+import ApiKeyInput from '@/components/common/ApiKeyInput';
 
 interface KeywordStepProps {}
-
-const mockGenerateKeywords = (business: any, icps: any[], usps: any[], geos: any[]): Promise<Keyword[]> => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      resolve([
-        {
-          id: '1',
-          term: 'AI workflow automation',
-          searchVolume: '5,400/mo',
-          difficulty: 'Medium',
-          relevance: 'High',
-          relatedICP: 'Enterprise IT Decision Makers',
-        },
-        {
-          id: '2',
-          term: 'business process automation software',
-          searchVolume: '12,200/mo',
-          difficulty: 'High',
-          relevance: 'Medium',
-          relatedICP: 'Mid-Market Operations Managers',
-        },
-      ]);
-    }, 2000);
-  });
-};
 
 const getDifficultyColor = (difficulty: string) => {
   if (difficulty.toLowerCase().includes('low')) return 'bg-green-100 text-green-800';
@@ -66,13 +43,39 @@ const KeywordStep: React.FC<KeywordStepProps> = () => {
   });
 
   const handleGenerateKeywords = async () => {
+    if (!localStorage.getItem('openai_api_key')) {
+      toast.error('Please set your OpenAI API key first');
+      return;
+    }
+
     setIsGenerating(true);
     try {
-      const generatedKeywords = await mockGenerateKeywords(business, icps, usps, geographies);
-      setKeywords([...keywords, ...generatedKeywords]); // Append new keywords
+      const generatedKeywords = await generateKeywords(business, icps, usps, []);
+      setKeywords(generatedKeywords);
       toast.success('Keywords generated!');
     } catch (error) {
       toast.error('Failed to generate keywords');
+      console.error(error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleGenerateMoreKeywords = async () => {
+    if (!localStorage.getItem('openai_api_key')) {
+      toast.error('Please set your OpenAI API key first');
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      // Pass existing keywords to avoid duplicates, along with ICPs, USPs, and geographies
+      const moreKeywords = await generateKeywords(business, icps, usps, keywords, geographies);
+      setKeywords([...keywords, ...moreKeywords]);
+      toast.success('Additional keywords generated!');
+    } catch (error) {
+      toast.error('Failed to generate additional keywords');
+      console.error(error);
     } finally {
       setIsGenerating(false);
     }
@@ -124,22 +127,24 @@ const KeywordStep: React.FC<KeywordStepProps> = () => {
             <p className="text-gray-600 mb-4">
               Our AI will generate a list of keywords tailored to your business and target audience.
             </p>
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <Button 
                 onClick={() => setCurrentStep(4)} 
                 variant="outline"
               >
                 Back to Geographies
               </Button>
-              <Button 
-                onClick={handleGenerateKeywords} 
-                variant="default"
-                className="bg-marketing-600 hover:bg-marketing-700 text-white transition-colors"
-                disabled={isGenerating}
-              >
-                {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Generate Keywords
-              </Button>
+              <div className="flex items-center gap-2">
+                <ApiKeyInput />
+                <Button 
+                  onClick={handleGenerateKeywords} 
+                  className="bg-marketing-600 hover:bg-marketing-700 text-white transition-colors"
+                  disabled={isGenerating}
+                >
+                  {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Generate Keywords
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -195,7 +200,7 @@ const KeywordStep: React.FC<KeywordStepProps> = () => {
             <Button 
               variant="outline"
               className="border-dashed border-2 border-gray-300 hover:border-marketing-400 flex flex-col items-center justify-center min-h-[200px] p-6"
-              onClick={handleGenerateKeywords}
+              onClick={handleGenerateMoreKeywords}
               disabled={isGenerating}
             >
               {isGenerating ? (
