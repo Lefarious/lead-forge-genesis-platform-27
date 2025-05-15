@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,19 +26,9 @@ const BusinessInfoStep: React.FC = () => {
     mainProblem: business.mainProblem || '',
   });
   
-  // Products state management
+  // Products state management - only manual entry now
   const [products, setProducts] = useState<string[]>(business.products || []);
   const [newProduct, setNewProduct] = useState('');
-
-  /**
-   * Generate initial products when description changes and no products exist
-   */
-  useEffect(() => {
-    // Only generate initial products if they don't exist and we have a description
-    if (formData.description && products.length === 0) {
-      generateProductSuggestions();
-    }
-  }, [formData.description]);
 
   /**
    * Handle input changes for form fields
@@ -46,49 +36,6 @@ const BusinessInfoStep: React.FC = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  /**
-   * Generate product suggestions based on business description and industry
-   */
-  const generateProductSuggestions = () => {
-    if (!formData.description) {
-      toast.error('Please enter a business description first');
-      return;
-    }
-
-    // Generate 3 product suggestions based on the business description
-    const description = formData.description.toLowerCase();
-    const industry = formData.industry.toLowerCase();
-    
-    // Simple rule-based product generation based on keywords in the description
-    const suggestedProducts: string[] = [];
-    
-    if (description.includes('software') || industry.includes('software') || industry.includes('tech')) {
-      suggestedProducts.push('Business Analytics Dashboard');
-      suggestedProducts.push('Cloud Storage Solution');
-      suggestedProducts.push('Team Collaboration Platform');
-    } else if (description.includes('health') || industry.includes('health') || industry.includes('medical')) {
-      suggestedProducts.push('Patient Management System');
-      suggestedProducts.push('Remote Health Monitoring');
-      suggestedProducts.push('Medical Records Software');
-    } else if (description.includes('finance') || industry.includes('finance') || industry.includes('banking')) {
-      suggestedProducts.push('Investment Portfolio Tracker');
-      suggestedProducts.push('Expense Management Tool');
-      suggestedProducts.push('Financial Planning Software');
-    } else if (description.includes('ecommerce') || description.includes('retail') || industry.includes('retail')) {
-      suggestedProducts.push('Online Store Platform');
-      suggestedProducts.push('Inventory Management System');
-      suggestedProducts.push('Customer Loyalty Program');
-    } else {
-      // Default products if no specific keywords are found
-      suggestedProducts.push('Premium Service Package');
-      suggestedProducts.push('Professional Consulting');
-      suggestedProducts.push('Enterprise Solution');
-    }
-    
-    setProducts(suggestedProducts);
-    toast.success('Generated product suggestions based on your business description');
   };
 
   /**
@@ -139,7 +86,6 @@ const BusinessInfoStep: React.FC = () => {
     }
 
     // Pass the form data to setBusinessInfo
-    // The context will handle generating the missing fields
     setBusinessInfo({
       ...formData,
       products: products,
@@ -227,15 +173,6 @@ const BusinessInfoStep: React.FC = () => {
             <div className="space-y-4 pt-4 border-t">
               <div className="flex justify-between items-center">
                 <Label htmlFor="products" className="text-lg font-medium">Products/Services *</Label>
-                <Button 
-                  type="button" 
-                  onClick={generateProductSuggestions} 
-                  variant="outline" 
-                  size="sm"
-                  className="text-xs"
-                >
-                  Generate Suggestions
-                </Button>
               </div>
               
               {/* Add new product input */}
@@ -280,7 +217,7 @@ const BusinessInfoStep: React.FC = () => {
               
               {/* Empty state for products */}
               {products.length === 0 && (
-                <p className="text-sm text-muted-foreground">No products added yet. Add some products or generate suggestions based on your business description.</p>
+                <p className="text-sm text-muted-foreground">No products added yet. Add your products or services above.</p>
               )}
             </div>
           </CardContent>
