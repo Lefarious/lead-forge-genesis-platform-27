@@ -1,20 +1,24 @@
-import * as React from "react"
 
+import * as React from "react"
 import { cn } from "@/lib/utils"
 
-const Card = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      "rounded-lg border bg-card text-card-foreground shadow-sm",
-      className
-    )}
-    {...props}
-  />
-))
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+  variant?: "default" | "dribbble";
+}
+
+const Card = React.forwardRef<HTMLDivElement, CardProps>(
+  ({ className, variant = "default", ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn(
+        "rounded-xl border bg-card text-card-foreground shadow-sm",
+        variant === "dribbble" && "dribbble-card overflow-hidden",
+        className
+      )}
+      {...props}
+    />
+  )
+)
 Card.displayName = "Card"
 
 const CardHeader = React.forwardRef<
@@ -76,4 +80,26 @@ const CardFooter = React.forwardRef<
 ))
 CardFooter.displayName = "CardFooter"
 
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
+const CardImage = React.forwardRef<
+  HTMLDivElement, 
+  React.HTMLAttributes<HTMLDivElement> & { src: string, alt?: string }
+>(({ className, src, alt = "", ...props }, ref) => (
+  <div ref={ref} className={cn("w-full overflow-hidden", className)} {...props}>
+    <img 
+      src={src} 
+      alt={alt} 
+      className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" 
+    />
+  </div>
+))
+CardImage.displayName = "CardImage"
+
+export { 
+  Card, 
+  CardHeader, 
+  CardFooter, 
+  CardTitle, 
+  CardDescription, 
+  CardContent, 
+  CardImage 
+}

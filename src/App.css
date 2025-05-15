@@ -1,3 +1,4 @@
+
 #root {
   max-width: 100%;
   width: 100%;
@@ -37,7 +38,7 @@
 .card {
   padding: 2em;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  border-radius: 0.75rem;
+  border-radius: 1rem;
 }
 
 .card:hover {
@@ -95,7 +96,7 @@
 
 /* Custom card styles */
 .quantum-card {
-  border-radius: 0.75rem;
+  border-radius: 1rem;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
 }
@@ -137,7 +138,7 @@
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.75rem;
+  border-radius: 1rem;
 }
 
 .dark .glass-morph {
@@ -163,4 +164,18 @@ input.modern-input:focus {
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.05);
   color: white;
+}
+
+/* Dribbble-inspired styles */
+.dribbble-gradient {
+  background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+}
+
+.dribbble-overlay {
+  background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.7));
+}
+
+.dribbble-pattern {
+  background-image: radial-gradient(rgba(139, 92, 246, 0.3) 2px, transparent 2px);
+  background-size: 30px 30px;
 }
