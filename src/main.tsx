@@ -13,7 +13,8 @@ if (!rootElement) {
   console.log('Root element found, rendering app');
   
   try {
-    createRoot(rootElement).render(
+    const root = createRoot(rootElement);
+    root.render(
       <ThemeProvider>
         <App />
       </ThemeProvider>

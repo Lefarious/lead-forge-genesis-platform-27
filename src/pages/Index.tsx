@@ -13,55 +13,72 @@ import PublishStep from '@/components/steps/PublishStep';
 console.log('Loading Index.tsx');
 
 const StepRenderer: React.FC = () => {
-  console.log('Rendering StepRenderer component');
-  const { currentStep } = useMarketingTool();
-  console.log('Current step:', currentStep);
-  
-  // Track visited steps but don't auto-generate anymore
-  const visitedSteps = useRef<Set<number>>(new Set([1])); // Consider first step as visited
+  try {
+    console.log('Rendering StepRenderer component');
+    const { currentStep } = useMarketingTool();
+    console.log('Current step:', currentStep);
+    
+    // Track visited steps but don't auto-generate anymore
+    const visitedSteps = useRef<Set<number>>(new Set([1])); // Consider first step as visited
 
-  // Add to visited steps when step is rendered
-  useEffect(() => {
-    console.log('StepRenderer useEffect, updating visited steps');
-    visitedSteps.current.add(currentStep);
-  }, [currentStep]);
+    // Add to visited steps when step is rendered
+    useEffect(() => {
+      console.log('StepRenderer useEffect, updating visited steps');
+      visitedSteps.current.add(currentStep);
+    }, [currentStep]);
 
-  const renderStep = () => {
-    console.log('Rendering step:', currentStep);
-    switch (currentStep) {
-      case 1:
-        return <BusinessInfoStep />;
-      case 2:
-        return <ICPStep />;
-      case 3:
-        return <USPStep />;
-      case 4:
-        return <GeographyStep />;
-      case 5:
-        return <KeywordStep />;
-      case 6:
-        return <ContentStep />;
-      case 7:
-        return <PublishStep />;
-      default:
-        console.log('Default case, rendering BusinessInfoStep');
-        return <BusinessInfoStep />;
-    }
-  };
+    const renderStep = () => {
+      console.log('Rendering step:', currentStep);
+      switch (currentStep) {
+        case 1:
+          return <BusinessInfoStep />;
+        case 2:
+          return <ICPStep />;
+        case 3:
+          return <USPStep />;
+        case 4:
+          return <GeographyStep />;
+        case 5:
+          return <KeywordStep />;
+        case 6:
+          return <ContentStep />;
+        case 7:
+          return <PublishStep />;
+        default:
+          console.log('Default case, rendering BusinessInfoStep');
+          return <BusinessInfoStep />;
+      }
+    };
 
-  return renderStep();
+    return renderStep();
+  } catch (error) {
+    console.error('Error in StepRenderer:', error);
+    return <div className="p-8 text-red-500">Error loading content. Please refresh the page.</div>;
+  }
 };
 
 const Index: React.FC = () => {
   console.log('Rendering Index component');
   
-  return (
-    <MarketingToolProvider>
-      <AppLayout>
-        <StepRenderer />
-      </AppLayout>
-    </MarketingToolProvider>
-  );
+  try {
+    return (
+      <MarketingToolProvider>
+        <AppLayout>
+          <StepRenderer />
+        </AppLayout>
+      </MarketingToolProvider>
+    );
+  } catch (error) {
+    console.error('Error in Index component:', error);
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="p-8 bg-red-100 text-red-700 rounded-lg shadow">
+          <h1 className="text-2xl font-bold">Something went wrong</h1>
+          <p>There was an error loading the application. Please refresh the page.</p>
+        </div>
+      </div>
+    );
+  }
 };
 
 export default Index;
