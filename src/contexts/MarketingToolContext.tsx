@@ -1,12 +1,74 @@
 import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { BusinessInfo } from '@/components/steps/BusinessInfoStep';
-import { ICP } from '@/components/steps/ICPStep';
-import { USP } from '@/components/steps/USPStep';
-import { Geography } from '@/components/steps/GeographyStep';
-import { ContentIdea } from '@/components/steps/ContentStep';
-import { PublishedContent } from '@/components/steps/PublishStep';
 import { KeywordStats } from '@/components/keywords/KeywordDataVisualizer';
+
+// Define the interface types here instead of importing them
+export interface BusinessInfo {
+  name: string;
+  industry: string;
+  missionStatement: string;
+  companyDescription: string;
+}
+
+export interface ICP {
+  id: string;
+  title: string;
+  description: string;
+  demographics?: string;
+  needs?: string;
+  painPoints?: string;
+  goals?: string;
+  isCustomAdded?: boolean;
+}
+
+export interface USP {
+  id: string;
+  title: string;
+  description: string;
+  targetICP: string;
+  valueProposition: string;
+  isCustomAdded?: boolean;
+}
+
+export interface Geography {
+  id: string;
+  name: string;
+  type: string;
+  marketSize: string;
+  competitionLevel: string;
+  targetICPs: string[];
+  isCustomAdded?: boolean;
+}
+
+export interface ContentIdea {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  targetICP: string;
+  keywords: string[];
+  published?: boolean;
+  publishLink?: string;
+  isCustomAdded?: boolean;
+}
+
+export interface PublishedContent {
+  id: string;
+  title: string;
+  type: string;
+  description: string;
+  publishDate: string;
+  link: string;
+}
+
+export interface LandingPage {
+  title: string;
+  headline: string;
+  description: string;
+  ctaText: string;
+  theme: 'light' | 'dark' | 'purple';
+  businessName: string;
+}
 
 export interface Competitor {
   id: string;
@@ -31,6 +93,15 @@ const initialBusinessInfo: BusinessInfo = {
   industry: '',
   missionStatement: '',
   companyDescription: '',
+};
+
+const initialLandingPage: LandingPage = {
+  title: '',
+  headline: '',
+  description: '',
+  ctaText: 'Download Now',
+  theme: 'light',
+  businessName: '',
 };
 
 export interface MarketingToolContextType {
@@ -79,6 +150,17 @@ export interface MarketingToolContextType {
   selectedKeywordStats: KeywordStats | null;
   setKeywordStats: (stats: KeywordStats[]) => void;
   setSelectedKeywordStats: (stats: KeywordStats | null) => void;
+  // Add these missing methods to fix the errors
+  setBusinessInfo: (businessInfo: BusinessInfo) => void;
+  setICPs: (icps: ICP[]) => void;
+  addCustomICP: (icp: Omit<ICP, 'id'>) => void;
+  setUSPs: (usps: USP[]) => void;
+  addCustomUSP: (usp: Omit<USP, 'id'>) => void;
+  addCustomGeography: (geography: Omit<Geography, 'id'>) => void;
+  addCustomContentIdea: (contentIdea: Omit<ContentIdea, 'id'>) => void;
+  publishContent: (id: string, publishLink: string) => void;
+  landingPage: LandingPage;
+  updateLandingPage: (updates: Partial<LandingPage>) => void;
 }
 
 export const MarketingToolContext = createContext<MarketingToolContextType | undefined>(undefined);
@@ -97,6 +179,7 @@ export const MarketingToolProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isStorageLoaded, setIsStorageLoaded] = useState<boolean>(false);
   const [keywordStats, setKeywordStats] = useState<KeywordStats[]>([]);
   const [selectedKeywordStats, setSelectedKeywordStats] = useState<KeywordStats | null>(null);
+  const [landingPage, setLandingPage] = useState<LandingPage>(initialLandingPage);
 
   useEffect(() => {
     loadFromLocalStorage();
@@ -107,6 +190,50 @@ export const MarketingToolProvider: React.FC<{ children: React.ReactNode }> = ({
     setCompetitors([...competitors, newCompetitor]);
   };
 
+  // Add alias methods to fix the errors
+  const setBusinessInfo = (businessInfo: BusinessInfo) => {
+    setBusiness(businessInfo);
+  };
+
+  const setICPs = (newIcps: ICP[]) => {
+    setIcps(newIcps);
+  };
+
+  const addCustomICP = (icp: Omit<ICP, 'id'>) => {
+    const newIcp: ICP = { ...icp, id: uuidv4(), isCustomAdded: true };
+    setIcps([...icps, newIcp]);
+  };
+
+  const setUSPs = (newUsps: USP[]) => {
+    setUsps(newUsps);
+  };
+
+  const addCustomUSP = (usp: Omit<USP, 'id'>) => {
+    const newUsp: USP = { ...usp, id: uuidv4(), isCustomAdded: true };
+    setUsps([...usps, newUsp]);
+  };
+
+  const addCustomGeography = (geography: Omit<Geography, 'id'>) => {
+    const newGeography: Geography = { ...geography, id: uuidv4(), isCustomAdded: true };
+    setGeographies([...geographies, newGeography]);
+  };
+
+  const addCustomContentIdea = (contentIdea: Omit<ContentIdea, 'id'>) => {
+    const newContentIdea: ContentIdea = { ...contentIdea, id: uuidv4(), isCustomAdded: true };
+    setContentIdeas([...contentIdeas, newContentIdea]);
+  };
+
+  const publishContent = (id: string, publishLink: string) => {
+    setContentIdeas(contentIdeas.map(content => 
+      content.id === id ? { ...content, published: true, publishLink } : content
+    ));
+  };
+
+  const updateLandingPage = (updates: Partial<LandingPage>) => {
+    setLandingPage(prev => ({ ...prev, ...updates }));
+  };
+
+  // Keep the existing methods
   const updateCompetitor = (id: string, updates: Partial<Competitor>) => {
     setCompetitors(competitors.map(competitor => competitor.id === id ? { ...competitor, ...updates } : competitor));
   };
@@ -172,9 +299,9 @@ export const MarketingToolProvider: React.FC<{ children: React.ReactNode }> = ({
     setContentIdeas(contentIdeas.filter(contentIdea => contentIdea.id !== id));
   };
 
-  const addPublishedContent = (publishedContent: Omit<PublishedContent, 'id'>) => {
-    const newPublishedContent: PublishedContent = { ...publishedContent, id: uuidv4() };
-    setPublishedContent([...publishedContent, newPublishedContent]);
+  const addPublishedContent = (content: Omit<PublishedContent, 'id'>) => {
+    const newContent: PublishedContent = { ...content, id: uuidv4() };
+    setPublishedContent([...publishedContent, newContent]);
   };
 
   const updatePublishedContent = (id: string, updates: Partial<PublishedContent>) => {
@@ -199,6 +326,7 @@ export const MarketingToolProvider: React.FC<{ children: React.ReactNode }> = ({
         setContentIdeas(parsed.contentIdeas || []);
         setPublishedContent(parsed.publishedContent || []);
         setKeywordStats(parsed.keywordStats || []);
+        setLandingPage(parsed.landingPage || initialLandingPage);
       }
     } catch (error) {
       console.error('Error loading data from localStorage:', error);
@@ -219,6 +347,7 @@ export const MarketingToolProvider: React.FC<{ children: React.ReactNode }> = ({
         contentIdeas,
         publishedContent,
         keywordStats,
+        landingPage
       };
       localStorage.setItem('marketingToolData', JSON.stringify(dataToSave));
     } catch (error) {
@@ -240,6 +369,7 @@ export const MarketingToolProvider: React.FC<{ children: React.ReactNode }> = ({
     contentIdeas, 
     publishedContent,
     keywordStats,
+    landingPage,
     isStorageLoaded
   ]);
 
@@ -289,6 +419,17 @@ export const MarketingToolProvider: React.FC<{ children: React.ReactNode }> = ({
     selectedKeywordStats,
     setKeywordStats,
     setSelectedKeywordStats,
+    // Add these to the context value
+    setBusinessInfo,
+    setICPs,
+    addCustomICP,
+    setUSPs,
+    addCustomUSP,
+    addCustomGeography,
+    addCustomContentIdea,
+    publishContent,
+    landingPage,
+    updateLandingPage,
   };
 
   return (

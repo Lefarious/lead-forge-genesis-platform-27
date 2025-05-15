@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
@@ -249,7 +248,9 @@ const KeywordStep: React.FC<KeywordStepProps> = () => {
         }
         
         const stats = await fetchKeywordStats(keyword, apiKey);
-        setKeywordStats(prevStats => [...prevStats, stats]);
+        // Fix the type mismatch
+        const updatedStats = [...keywordStats, stats];
+        setKeywordStats(updatedStats);
         setSelectedKeywordStats(stats);
       }
     } catch (error) {
@@ -278,14 +279,12 @@ const KeywordStep: React.FC<KeywordStepProps> = () => {
         synonyms: [...new Set([...selectedKeywordStats.synonyms, ...newSynonyms])]
       };
       
-      // Update the keyword stats array
-      setKeywordStats(prevStats => 
-        prevStats.map(stat => 
-          stat.id === selectedKeywordStats.id ? updatedStats : stat
-        )
+      // Update the keyword stats array - fix the type mismatch
+      const updatedKeywordStats = keywordStats.map(stat => 
+        stat.id === selectedKeywordStats.id ? updatedStats : stat
       );
       
-      // Update the selected stats
+      setKeywordStats(updatedKeywordStats);
       setSelectedKeywordStats(updatedStats);
       
       toast.success('Generated new synonyms');
