@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
@@ -12,12 +13,18 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import ApiKeyInput from '@/components/common/ApiKeyInput';
+import { generateContentIdeas } from '@/utils/llmUtils';
 
 interface ContentStepProps {
   autoGenerate?: boolean;
 }
 
-// Move this function outside of the component to make it available to all components in the file
+/**
+ * Helper function to render an icon based on content type
+ * @param type The type of content (e.g., 'white paper', 'blog post')
+ * @returns React element with the appropriate icon
+ */
 const contentTypeIcon = (type: string) => {
   switch (type.toLowerCase()) {
     case 'white paper':
@@ -33,61 +40,29 @@ const contentTypeIcon = (type: string) => {
   }
 };
 
-const mockGenerateContent = (business: any, icps: any[], keywords: any[]): Promise<ContentIdea[]> => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      resolve([
-        {
-          id: '1',
-          title: 'The Future of Workflow Automation: AI-Driven Approaches for Enterprise',
-          type: 'White Paper',
-          targetICP: 'Enterprise IT Decision Makers',
-          targetKeywords: ['AI workflow automation', 'enterprise workflow management'],
-          outline: [
-            'Introduction to AI in workflow automation',
-            'Current challenges in enterprise workflows',
-            'How AI transforms automation capabilities',
-            'Case studies: 3 enterprises that increased efficiency by 70%+',
-            'Implementation roadmap for enterprise IT leaders',
-            'ROI calculation methodology'
-          ],
-          estimatedValue: 'High - Lead generation for enterprise clients',
-          published: false
-        },
-        {
-          id: '2',
-          title: '5 Ways No-Code Automation is Transforming Startup Operations',
-          type: 'Blog Post',
-          targetICP: 'Startup Founders',
-          targetKeywords: ['no-code automation tool', 'startup automation tools'],
-          outline: [
-            'The startup time crunch: Why automation matters',
-            '1. Customer onboarding automation',
-            '2. Marketing and sales process automation',
-            '3. Financial reporting automation',
-            '4. HR and recruitment automation',
-            '5. Customer support automation',
-            'How to start with limited resources'
-          ],
-          estimatedValue: 'Medium - SEO and awareness building',
-          published: false
-        }
-      ]);
-    }, 2000);
-  });
-};
-
+/**
+ * ContentStep Component
+ * 
+ * Manages the generation and display of content ideas based on business information,
+ * target audience (ICPs), keywords, and unique selling points.
+ * 
+ * @param autoGenerate If true, automatically generates content ideas on component mount
+ */
 const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
+  // Context and state
   const { 
-    business, icps, keywords, contentIdeas, setContentIdeas, addCustomContentIdea,
+    business, icps, keywords, geographies, usps, contentIdeas, setContentIdeas, addCustomContentIdea,
     publishContent, setCurrentStep, isGenerating, setIsGenerating
   } = useMarketingTool();
+  
+  // UI state management
   const [selectedTab, setSelectedTab] = useState('all');
   const [selectedContent, setSelectedContent] = useState<ContentIdea | null>(null);
   const [editNotes, setEditNotes] = useState('');
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   
+  // State for new content creation
   const [newContent, setNewContent] = useState<Partial<ContentIdea>>({
     title: '',
     type: 'Blog Post',
@@ -101,37 +76,70 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
   const [currentOutlineItem, setCurrentOutlineItem] = useState('');
   const [currentKeyword, setCurrentKeyword] = useState('');
 
+  /**
+   * Handles the generation of content ideas using the LLM API
+   */
   const handleGenerateContent = async () => {
+    // Check for API key before proceeding
+    if (!localStorage.getItem('openai_api_key')) {
+      toast.error('Please set your OpenAI API key first');
+      return;
+    }
+
     setIsGenerating(true);
     try {
-      const generatedContent = await mockGenerateContent(business, icps, keywords);
+      console.log('Generating content ideas using:', {
+        business,
+        icps,
+        keywords,
+        usps,
+        geographies,
+        existingIdeas: contentIdeas
+      });
+      
+      // Call the API to generate content ideas
+      const generatedContent = await generateContentIdeas(business, icps, keywords, usps, geographies, contentIdeas);
       setContentIdeas([...contentIdeas, ...generatedContent]); // Append new content ideas
       toast.success('Content ideas generated!');
     } catch (error) {
+      console.error('Content generation error:', error);
       toast.error('Failed to generate content ideas');
     } finally {
       setIsGenerating(false);
     }
   };
 
-  // Auto-generate on first visit
+  /**
+   * Auto-generate content ideas on component mount if conditions are met
+   */
   useEffect(() => {
     if (autoGenerate && contentIdeas.length === 0 && localStorage.getItem('openai_api_key') && !isGenerating) {
       handleGenerateContent();
     }
   }, [autoGenerate]);
 
+  /**
+   * Mark a content idea as published
+   * @param id The ID of the content to publish
+   */
   const handlePublish = (id: string) => {
     publishContent(id);
     toast.success('Content published! Share link is now available.');
   };
 
+  /**
+   * Open the edit dialog for a content idea
+   * @param content The content idea to edit
+   */
   const handleEdit = (content: ContentIdea) => {
     setSelectedContent(content);
     setEditNotes('');
     setIsEditDialogOpen(true);
   };
 
+  /**
+   * Save edit notes for a content idea
+   */
   const handleSaveEdit = () => {
     if (!selectedContent) return;
     
@@ -139,6 +147,9 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
     setIsEditDialogOpen(false);
   };
   
+  /**
+   * Add an outline item to the new content being created
+   */
   const handleAddOutlineItem = () => {
     if (!currentOutlineItem.trim()) return;
     
@@ -149,12 +160,19 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
     setCurrentOutlineItem('');
   };
   
+  /**
+   * Remove an outline item from the new content being created
+   * @param index The index of the outline item to remove
+   */
   const handleRemoveOutlineItem = (index: number) => {
     const updatedOutline = [...(newContent.outline || [])];
     updatedOutline.splice(index, 1);
     setNewContent({...newContent, outline: updatedOutline});
   };
   
+  /**
+   * Add a keyword to the new content being created
+   */
   const handleAddKeyword = () => {
     if (!currentKeyword.trim()) return;
     
@@ -165,21 +183,32 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
     setCurrentKeyword('');
   };
   
+  /**
+   * Remove a keyword from the new content being created
+   * @param index The index of the keyword to remove
+   */
   const handleRemoveKeyword = (index: number) => {
     const updatedKeywords = [...(newContent.targetKeywords || [])];
     updatedKeywords.splice(index, 1);
     setNewContent({...newContent, targetKeywords: updatedKeywords});
   };
   
+  /**
+   * Add a custom content idea
+   */
   const handleAddCustomContent = () => {
+    // Validate all required fields
     if (!newContent.title || !newContent.type || !newContent.targetICP || 
         !newContent.targetKeywords?.length || !newContent.outline?.length || !newContent.estimatedValue) {
       toast.error('Please fill all fields');
       return;
     }
     
+    // Add the custom content idea to the context
     addCustomContentIdea(newContent as ContentIdea);
     setIsAddDialogOpen(false);
+    
+    // Reset form for next use
     setNewContent({
       title: '',
       type: 'Blog Post',
@@ -194,12 +223,18 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
     toast.success('Custom content idea added successfully');
   };
 
+  /**
+   * Filter content ideas based on the selected tab
+   */
   const filterContent = () => {
     if (selectedTab === 'all') return contentIdeas;
     if (selectedTab === 'published') return contentIdeas.filter(item => item.published);
     return contentIdeas.filter(item => !item.published);
   };
 
+  /**
+   * Move to the next step in the marketing flow
+   */
   const handleContinue = () => {
     if (contentIdeas.length === 0) {
       toast.error('Please generate content ideas first');
@@ -218,15 +253,16 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
     <div className="container py-8 animate-fade-in">
       <h1 className="text-3xl font-bold text-center mb-2">Content Ideas</h1>
       <p className="text-center text-gray-600 mb-8">
-        Generate high-value content ideas based on your ICPs and keywords
+        Generate high-value content ideas based on your ICPs, USPs, geographies and keywords
       </p>
 
+      {/* Display empty state when no content ideas exist */}
       {contentIdeas.length === 0 ? (
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Generate Content Ideas</CardTitle>
             <CardDescription>
-              We'll analyze your business, ICPs, and keywords to suggest impactful content
+              We'll analyze your business, ICPs, USPs, geographies, and keywords to suggest impactful content
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -241,21 +277,25 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
               >
                 Back to Keywords
               </Button>
-              <Button 
-                onClick={handleGenerateContent} 
-                variant="default"
-                className="bg-marketing-600 hover:bg-marketing-700 text-white transition-all duration-300 flex items-center gap-2 group"
-                disabled={isGenerating}
-              >
-                {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Generate Content Ideas
-                <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-              </Button>
+              <div className="flex items-center gap-2">
+                <ApiKeyInput />
+                <Button 
+                  onClick={handleGenerateContent} 
+                  variant="default"
+                  className="bg-marketing-600 hover:bg-marketing-700 text-white transition-all duration-300 flex items-center gap-2 group"
+                  disabled={isGenerating}
+                >
+                  {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Generate Content Ideas
+                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
       ) : (
         <>
+          {/* Content management tabs when content ideas exist */}
           <Tabs defaultValue="all" value={selectedTab} onValueChange={setSelectedTab} className="mb-8">
             <div className="flex justify-between items-center mb-4">
               <TabsList>
@@ -273,6 +313,7 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
               </Button>
             </div>
             
+            {/* All tab content */}
             <TabsContent value="all" className="mt-0">
               <div className="grid grid-cols-1 gap-6">
                 {filterContent().map((content) => (
@@ -286,6 +327,7 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
               </div>
             </TabsContent>
             
+            {/* Published tab content */}
             <TabsContent value="published" className="mt-0">
               <div className="grid grid-cols-1 gap-6">
                 {filterContent().map((content) => (
@@ -299,6 +341,7 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
               </div>
             </TabsContent>
             
+            {/* Unpublished tab content */}
             <TabsContent value="unpublished" className="mt-0">
               <div className="grid grid-cols-1 gap-6">
                 {filterContent().map((content) => (
@@ -313,17 +356,18 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
             </TabsContent>
           </Tabs>
           
-          <div className="flex justify-between items-center mb-8">
+          {/* Add custom content and generate more content cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  className="flex gap-2 items-center hover:bg-gray-100 transition-all duration-300 group"
-                >
-                  <Plus className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                  Add Custom Content Idea
-                </Button>
+                <Card className="border-dashed border-2 border-gray-300 hover:border-marketing-400 cursor-pointer flex flex-col items-center justify-center min-h-[200px] transition-all duration-300">
+                  <CardContent className="flex flex-col items-center justify-center p-6">
+                    <Plus className="h-12 w-12 text-gray-400 mb-4" />
+                    <p className="text-gray-600 font-medium">Add Custom Content Idea</p>
+                  </CardContent>
+                </Card>
               </DialogTrigger>
+              {/* Dialog for adding custom content */}
               <DialogContent className="sm:max-w-[650px]">
                 <DialogHeader>
                   <DialogTitle>Add Custom Content Idea</DialogTitle>
@@ -332,6 +376,7 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4 max-h-[500px] overflow-y-auto pr-2">
+                  {/* Title input */}
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="title" className="text-right">
                       Title
@@ -344,6 +389,7 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
                       placeholder="e.g., How to Automate Your Business Processes"
                     />
                   </div>
+                  {/* Content type selector */}
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="contentType" className="text-right">
                       Content Type
@@ -364,6 +410,7 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
                     </select>
                   </div>
                   
+                  {/* Target ICP selector */}
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="targetICP" className="text-right">
                       Target ICP
@@ -380,6 +427,7 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
                     </select>
                   </div>
                   
+                  {/* Target keywords input */}
                   <div className="grid grid-cols-4 items-start gap-4">
                     <Label htmlFor="targetKeywords" className="text-right pt-2">
                       Target Keywords
@@ -418,6 +466,7 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
                     </div>
                   </div>
                   
+                  {/* Content outline input */}
                   <div className="grid grid-cols-4 items-start gap-4">
                     <Label htmlFor="outline" className="text-right pt-2">
                       Content Outline
@@ -456,6 +505,7 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
                     </div>
                   </div>
                   
+                  {/* Estimated value selector */}
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="estimatedValue" className="text-right">
                       Estimated Value
@@ -487,20 +537,24 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-            <Button 
-              onClick={handleGenerateContent} 
-              className="bg-marketing-600 hover:bg-marketing-700 text-white transition-all duration-300 flex items-center gap-2 group"
-              disabled={isGenerating}
-            >
-              {isGenerating ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4 group-hover:rotate-180 transition-transform duration-500" />
-              )}
-              Generate More Content Ideas
-            </Button>
+            
+            {/* Generate more content card */}
+            <Card className="border-dashed border-2 border-gray-300 hover:border-marketing-400 cursor-pointer flex flex-col items-center justify-center min-h-[200px] transition-all duration-300">
+              <CardContent className="flex flex-col items-center justify-center p-6" onClick={handleGenerateContent}>
+                {isGenerating ? (
+                  <Loader2 className="h-12 w-12 text-gray-400 mb-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-12 w-12 text-gray-400 mb-4 hover:rotate-180 transition-transform duration-500" />
+                )}
+                <div className="flex items-center gap-2">
+                  <ApiKeyInput />
+                </div>
+                <p className="text-gray-600 font-medium mt-2">Generate More Content Ideas</p>
+              </CardContent>
+            </Card>
           </div>
           
+          {/* Navigation buttons */}
           <div className="flex justify-between">
             <Button variant="outline" onClick={() => setCurrentStep(5)} className="hover:bg-gray-100 transition-colors">
               Back
@@ -509,6 +563,7 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
         </>
       )}
       
+      {/* Edit content dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -557,6 +612,11 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
   );
 };
 
+/**
+ * ContentCard Component
+ * 
+ * Displays an individual content idea card with options to publish or edit
+ */
 interface ContentCardProps {
   content: ContentIdea;
   onPublish: (id: string) => void;
@@ -590,6 +650,7 @@ const ContentCard: React.FC<ContentCardProps> = ({ content, onPublish, onEdit })
       </CardHeader>
       <CardContent className="pb-2">
         <div className="space-y-4">
+          {/* Target keywords section */}
           <div>
             <h4 className="text-sm font-medium mb-1">Target Keywords:</h4>
             <div className="flex flex-wrap gap-2">
@@ -601,6 +662,7 @@ const ContentCard: React.FC<ContentCardProps> = ({ content, onPublish, onEdit })
             </div>
           </div>
           
+          {/* Content outline section */}
           <div>
             <h4 className="text-sm font-medium mb-1">Outline:</h4>
             <ul className="text-sm text-gray-600 pl-5 list-disc">
@@ -615,6 +677,7 @@ const ContentCard: React.FC<ContentCardProps> = ({ content, onPublish, onEdit })
             </ul>
           </div>
           
+          {/* Estimated value section */}
           <div>
             <h4 className="text-sm font-medium mb-1">Estimated Value:</h4>
             <p className="text-sm text-gray-600">{content.estimatedValue}</p>

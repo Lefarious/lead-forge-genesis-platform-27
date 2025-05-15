@@ -1,263 +1,459 @@
+import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import { KeywordStats } from '@/components/keywords/KeywordDataVisualizer';
 
-import React, { createContext, useContext, useState } from 'react';
-
-export type Business = {
+// Define the interface types here instead of importing them
+export interface BusinessInfo {
   name: string;
   industry: string;
   description: string;
-  targetAudience: string;
   mainProblem: string;
+  products: string[];
+  targetAudience: string;
   mainSolution: string;
   existingCustomers: string;
-};
+  missionStatement?: string;
+  companyDescription?: string;
+}
 
-export type ICP = {
+export interface ICP {
   id: string;
   title: string;
   description: string;
   demographics: string;
   painPoints: string[];
   goals: string[];
+  blueOceanScore: number;
+  reachMethods: string[];
+  productSuggestions: string[];
   isCustomAdded?: boolean;
-};
+}
 
-export type USP = {
+export interface USP {
   id: string;
   title: string;
   description: string;
   targetICP: string;
   valueProposition: string;
   isCustomAdded?: boolean;
-};
+}
 
-export type Geography = {
+export interface Geography {
   id: string;
-  region: string;
+  name: string;
+  type: string;
   marketSize: string;
-  growthRate: string;
   competitionLevel: string;
-  whyTarget?: string;
+  targetICPs: string[];
+  region: string;
+  growthRate: string;
   recommendation: string;
+  whyTarget?: string;
+  profitabilityRating?: string;
+  pricingPower?: string;
+  brandPersonality?: string;
   isCustomAdded?: boolean;
-};
+}
 
-export type Keyword = {
+export interface ContentIdea {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  targetICP: string;
+  keywords: string[];
+  targetKeywords: string[];
+  outline: string[];
+  estimatedValue: string;
+  published?: boolean;
+  publishLink?: string;
+  isCustomAdded?: boolean;
+}
+
+export interface PublishedContent {
+  id: string;
+  title: string;
+  type: string;
+  description: string;
+  publishDate: string;
+  link: string;
+}
+
+export interface LandingPage {
+  title: string;
+  headline: string;
+  description: string;
+  ctaText: string;
+  theme: 'light' | 'dark' | 'purple';
+  businessName: string;
+}
+
+export interface Competitor {
+  id: string;
+  name: string;
+  url: string;
+  description: string;
+}
+
+export interface Keyword {
   id: string;
   term: string;
   searchVolume: string;
   difficulty: string;
   relevance: string;
   relatedICP: string;
+  competitorUsage?: string;
   isCustomAdded?: boolean;
-};
+}
 
-export type ContentIdea = {
-  id: string;
-  title: string;
-  type: string;
-  targetICP: string;
-  targetKeywords: string[];
-  outline: string[];
-  estimatedValue: string;
-  published: boolean;
-  publishLink?: string;
-  isCustomAdded?: boolean;
-};
-
-export type LandingPage = {
-  title: string;
-  headline: string;
-  description: string;
-  formFields: string[];
-  ctaText: string;
-  logo?: string;
-  businessName: string;
-  theme: 'light' | 'dark' | 'purple';
-};
-
-export type MarketingToolContextType = {
-  currentStep: number;
-  setCurrentStep: (step: number) => void;
-  business: Business;
-  setBusinessInfo: (info: Business) => void;
-  icps: ICP[];
-  setICPs: (icps: ICP[]) => void;
-  addCustomICP: (icp: ICP) => void;
-  usps: USP[];
-  setUSPs: (usps: USP[]) => void;
-  addCustomUSP: (usp: USP) => void;
-  geographies: Geography[];
-  setGeographies: (geos: Geography[]) => void;
-  addCustomGeography: (geo: Geography) => void;
-  keywords: Keyword[];
-  setKeywords: (keywords: Keyword[]) => void;
-  addCustomKeyword: (keyword: Keyword) => void;
-  contentIdeas: ContentIdea[];
-  setContentIdeas: (ideas: ContentIdea[]) => void;
-  addCustomContentIdea: (idea: ContentIdea) => void;
-  publishContent: (id: string) => void;
-  landingPage: LandingPage;
-  updateLandingPage: (page: Partial<LandingPage>) => void;
-  isGenerating: boolean;
-  setIsGenerating: (isGenerating: boolean) => void;
-  resetAll: () => void;
-};
-
-const defaultBusiness: Business = {
+const initialBusinessInfo: BusinessInfo = {
   name: '',
   industry: '',
   description: '',
-  targetAudience: '',
   mainProblem: '',
+  products: [],
+  targetAudience: '',
   mainSolution: '',
   existingCustomers: '',
+  missionStatement: '',
+  companyDescription: '',
 };
 
-const defaultLandingPage: LandingPage = {
+const initialLandingPage: LandingPage = {
   title: '',
   headline: '',
   description: '',
-  formFields: ['email', 'name', 'company'],
   ctaText: 'Download Now',
-  businessName: '',
   theme: 'light',
+  businessName: '',
 };
+
+export interface MarketingToolContextType {
+  business: BusinessInfo;
+  setBusiness: (business: BusinessInfo) => void;
+  competitors: Competitor[];
+  setCompetitors: (competitors: Competitor[]) => void;
+  addCompetitor: (competitor: Omit<Competitor, 'id'>) => void;
+  updateCompetitor: (id: string, updates: Partial<Competitor>) => void;
+  deleteCompetitor: (id: string) => void;
+  icps: ICP[];
+  setIcps: (icps: ICP[]) => void;
+  addIcp: (icp: Omit<ICP, 'id'>) => void;
+  updateIcp: (id: string, updates: Partial<ICP>) => void;
+  deleteIcp: (id: string) => void;
+  usps: USP[];
+  setUsps: (usps: USP[]) => void;
+  addUsp: (usp: Omit<USP, 'id'>) => void;
+  updateUsp: (id: string, updates: Partial<USP>) => void;
+  deleteUsp: (id: string) => void;
+  geographies: Geography[];
+  setGeographies: (geographies: Geography[]) => void;
+  addGeography: (geography: Omit<Geography, 'id'>) => void;
+  updateGeography: (id: string, updates: Partial<Geography>) => void;
+  deleteGeography: (id: string) => void;
+  keywords: Keyword[];
+  setKeywords: (keywords: Keyword[]) => void;
+  addCustomKeyword: (keyword: Omit<Keyword, 'id'>) => void;
+  contentIdeas: ContentIdea[];
+  setContentIdeas: (contentIdeas: ContentIdea[]) => void;
+  addContentIdea: (contentIdea: Omit<ContentIdea, 'id'>) => void;
+  updateContentIdea: (id: string, updates: Partial<ContentIdea>) => void;
+  deleteContentIdea: (id: string) => void;
+  publishedContent: PublishedContent[];
+  setPublishedContent: (publishedContent: PublishedContent[]) => void;
+  addPublishedContent: (publishedContent: Omit<PublishedContent, 'id'>) => void;
+  updatePublishedContent: (id: string, updates: Partial<PublishedContent>) => void;
+  deletePublishedContent: (id: string) => void;
+  currentStep: number;
+  setCurrentStep: (step: number) => void;
+  isGenerating: boolean;
+  setIsGenerating: (generating: boolean) => void;
+  isStorageLoaded: boolean;
+  setIsStorageLoaded: (loaded: boolean) => void;
+  keywordStats: KeywordStats[];
+  selectedKeywordStats: KeywordStats | null;
+  setKeywordStats: (stats: KeywordStats[]) => void;
+  setSelectedKeywordStats: (stats: KeywordStats | null) => void;
+  setBusinessInfo: (businessInfo: BusinessInfo) => void;
+  setICPs: (icps: ICP[]) => void;
+  addCustomICP: (icp: Omit<ICP, 'id'>) => void;
+  setUSPs: (usps: USP[]) => void;
+  addCustomUSP: (usp: Omit<USP, 'id'>) => void;
+  addCustomGeography: (geography: Omit<Geography, 'id'>) => void;
+  addCustomContentIdea: (contentIdea: Omit<ContentIdea, 'id'>) => void;
+  publishContent: (id: string, publishLink?: string) => void;
+  landingPage: LandingPage;
+  updateLandingPage: (updates: Partial<LandingPage>) => void;
+}
 
 export const MarketingToolContext = createContext<MarketingToolContextType | undefined>(undefined);
 
 export const MarketingToolProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [business, setBusiness] = useState<Business>(defaultBusiness);
-  const [icps, setICPs] = useState<ICP[]>([]);
-  const [usps, setUSPs] = useState<USP[]>([]);
+  const [business, setBusiness] = useState<BusinessInfo>(initialBusinessInfo);
+  const [competitors, setCompetitors] = useState<Competitor[]>([]);
+  const [icps, setIcps] = useState<ICP[]>([]);
+  const [usps, setUsps] = useState<USP[]>([]);
   const [geographies, setGeographies] = useState<Geography[]>([]);
   const [keywords, setKeywords] = useState<Keyword[]>([]);
   const [contentIdeas, setContentIdeas] = useState<ContentIdea[]>([]);
-  const [landingPage, setLandingPage] = useState<LandingPage>(defaultLandingPage);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [publishedContent, setPublishedContent] = useState<PublishedContent[]>([]);
+  const [currentStep, setCurrentStep] = useState<number>(1);
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [isStorageLoaded, setIsStorageLoaded] = useState<boolean>(false);
+  const [keywordStats, setKeywordStats] = useState<KeywordStats[]>([]);
+  const [selectedKeywordStats, setSelectedKeywordStats] = useState<KeywordStats | null>(null);
+  const [landingPage, setLandingPage] = useState<LandingPage>(initialLandingPage);
 
-  const setBusinessInfo = (info: Partial<Business>) => {
-    // Auto-generate missing fields based on provided information
-    const completeInfo = {
-      ...info,
-      targetAudience: generateTargetAudience(info),
-      mainSolution: generateSolution(info),
-      existingCustomers: generateExistingCustomers(info),
-    };
-    
-    setBusiness(prev => ({ ...prev, ...completeInfo }));
-    setLandingPage(prev => ({
-      ...prev,
-      businessName: info.name || prev.businessName,
-      title: `${info.name || prev.businessName} - ${completeInfo.mainSolution}`,
-      headline: `Discover How ${info.name || prev.businessName} Can Transform Your ${info.industry || prev.businessName} Experience`,
-      description: `Learn how our solutions help with ${completeInfo.mainProblem} and provide ${completeInfo.mainSolution} for ${completeInfo.targetAudience}.`,
-    }));
+  useEffect(() => {
+    loadFromLocalStorage();
+  }, []);
+
+  const addCompetitor = (competitor: Omit<Competitor, 'id'>) => {
+    const newCompetitor: Competitor = { ...competitor, id: uuidv4() };
+    setCompetitors([...competitors, newCompetitor]);
   };
 
-  // Helper functions to generate missing fields
-  const generateTargetAudience = (info: Partial<Business>): string => {
-    if (info.industry && info.description) {
-      return `Businesses and professionals in the ${info.industry} industry looking to improve their operations`;
+  const setBusinessInfo = (businessInfo: BusinessInfo) => {
+    setBusiness(businessInfo);
+  };
+
+  const setICPs = (newIcps: ICP[]) => {
+    setIcps(newIcps);
+  };
+
+  const addCustomICP = (icp: Omit<ICP, 'id'>) => {
+    const newIcp: ICP = { ...icp, id: uuidv4(), isCustomAdded: true };
+    setIcps([...icps, newIcp]);
+  };
+
+  const setUSPs = (newUsps: USP[]) => {
+    setUsps(newUsps);
+  };
+
+  const addCustomUSP = (usp: Omit<USP, 'id'>) => {
+    const newUsp: USP = { ...usp, id: uuidv4(), isCustomAdded: true };
+    setUsps([...usps, newUsp]);
+  };
+
+  const addCustomGeography = (geography: Omit<Geography, 'id'>) => {
+    const newGeography: Geography = { ...geography, id: uuidv4(), isCustomAdded: true };
+    setGeographies([...geographies, newGeography]);
+  };
+
+  const addCustomContentIdea = (contentIdea: Omit<ContentIdea, 'id'>) => {
+    const newContentIdea: ContentIdea = { ...contentIdea, id: uuidv4(), isCustomAdded: true };
+    setContentIdeas([...contentIdeas, newContentIdea]);
+  };
+
+  const publishContent = (id: string, publishLink: string = '') => {
+    setContentIdeas(contentIdeas.map(content => 
+      content.id === id ? { ...content, published: true, publishLink } : content
+    ));
+  };
+
+  const updateLandingPage = (updates: Partial<LandingPage>) => {
+    setLandingPage(prev => ({ ...prev, ...updates }));
+  };
+
+  const updateCompetitor = (id: string, updates: Partial<Competitor>) => {
+    setCompetitors(competitors.map(competitor => competitor.id === id ? { ...competitor, ...updates } : competitor));
+  };
+
+  const deleteCompetitor = (id: string) => {
+    setCompetitors(competitors.filter(competitor => competitor.id !== id));
+  };
+
+  const addIcp = (icp: Omit<ICP, 'id'>) => {
+    const newIcp: ICP = { ...icp, id: uuidv4() };
+    setIcps([...icps, newIcp]);
+  };
+
+  const updateIcp = (id: string, updates: Partial<ICP>) => {
+    setIcps(icps.map(icp => icp.id === id ? { ...icp, ...updates } : icp));
+  };
+
+  const deleteIcp = (id: string) => {
+    setIcps(icps.filter(icp => icp.id !== id));
+  };
+
+  const addUsp = (usp: Omit<USP, 'id'>) => {
+    const newUsp: USP = { ...usp, id: uuidv4() };
+    setUsps([...usps, newUsp]);
+  };
+
+  const updateUsp = (id: string, updates: Partial<USP>) => {
+    setUsps(usps.map(usp => usp.id === id ? { ...usp, ...updates } : usp));
+  };
+
+  const deleteUsp = (id: string) => {
+    setUsps(usps.filter(usp => usp.id !== id));
+  };
+
+  const addGeography = (geography: Omit<Geography, 'id'>) => {
+    const newGeography: Geography = { ...geography, id: uuidv4() };
+    setGeographies([...geographies, newGeography]);
+  };
+
+  const updateGeography = (id: string, updates: Partial<Geography>) => {
+    setGeographies(geographies.map(geography => geography.id === id ? { ...geography, ...updates } : geography));
+  };
+
+  const deleteGeography = (id: string) => {
+    setGeographies(geographies.filter(geography => geography.id !== id));
+  };
+
+  const addCustomKeyword = (keyword: Omit<Keyword, 'id'>) => {
+    const newKeyword: Keyword = { ...keyword, id: uuidv4(), isCustomAdded: true };
+    setKeywords([...keywords, newKeyword]);
+  };
+
+  const addContentIdea = (contentIdea: Omit<ContentIdea, 'id'>) => {
+    const newContentIdea: ContentIdea = { ...contentIdea, id: uuidv4() };
+    setContentIdeas([...contentIdeas, newContentIdea]);
+  };
+
+  const updateContentIdea = (id: string, updates: Partial<ContentIdea>) => {
+    setContentIdeas(contentIdeas.map(contentIdea => contentIdea.id === id ? { ...contentIdea, ...updates } : contentIdea));
+  };
+
+  const deleteContentIdea = (id: string) => {
+    setContentIdeas(contentIdeas.filter(contentIdea => contentIdea.id !== id));
+  };
+
+  const addPublishedContent = (content: Omit<PublishedContent, 'id'>) => {
+    const newContent: PublishedContent = { ...content, id: uuidv4() };
+    setPublishedContent([...publishedContent, newContent]);
+  };
+
+  const updatePublishedContent = (id: string, updates: Partial<PublishedContent>) => {
+    setPublishedContent(publishedContent.map(content => content.id === id ? { ...content, ...updates } : content));
+  };
+
+  const deletePublishedContent = (id: string) => {
+    setPublishedContent(publishedContent.filter(content => content.id !== id));
+  };
+
+  const loadFromLocalStorage = () => {
+    try {
+      const savedData = localStorage.getItem('marketingToolData');
+      if (savedData) {
+        const parsed = JSON.parse(savedData);
+        setBusiness(parsed.business || initialBusinessInfo);
+        setCompetitors(parsed.competitors || []);
+        setIcps(parsed.icps || []);
+        setUsps(parsed.usps || []);
+        setGeographies(parsed.geographies || []);
+        setKeywords(parsed.keywords || []);
+        setContentIdeas(parsed.contentIdeas || []);
+        setPublishedContent(parsed.publishedContent || []);
+        setKeywordStats(parsed.keywordStats || []);
+        setLandingPage(parsed.landingPage || initialLandingPage);
+      }
+    } catch (error) {
+      console.error('Error loading data from localStorage:', error);
+    } finally {
+      setIsStorageLoaded(true);
     }
-    return "Industry professionals and businesses";
   };
 
-  const generateSolution = (info: Partial<Business>): string => {
-    if (info.mainProblem) {
-      return `Comprehensive ${info.industry || ''} solution that addresses ${info.mainProblem}`;
+  const saveToLocalStorage = () => {
+    try {
+      const dataToSave = {
+        business,
+        competitors,
+        icps,
+        usps,
+        geographies,
+        keywords,
+        contentIdeas,
+        publishedContent,
+        keywordStats,
+        landingPage
+      };
+      localStorage.setItem('marketingToolData', JSON.stringify(dataToSave));
+    } catch (error) {
+      console.error('Error saving data to localStorage:', error);
     }
-    return "Innovative solutions tailored to industry needs";
   };
 
-  const generateExistingCustomers = (info: Partial<Business>): string => {
-    if (info.industry) {
-      return `Leading companies in the ${info.industry} industry`;
+  useEffect(() => {
+    if (isStorageLoaded) {
+      saveToLocalStorage();
     }
-    return "Various businesses across multiple sectors";
-  };
+  }, [
+    business, 
+    competitors, 
+    icps, 
+    usps, 
+    geographies, 
+    keywords, 
+    contentIdeas, 
+    publishedContent,
+    keywordStats,
+    landingPage,
+    isStorageLoaded
+  ]);
 
-  // Generate a unique ID for custom entities
-  const generateUniqueId = (prefix: string) => {
-    return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-  };
-
-  // Add new custom entity functions with unique IDs
-  const addCustomICP = (icp: ICP) => {
-    setICPs([...icps, { ...icp, id: generateUniqueId('custom-icp'), isCustomAdded: true }]);
-  };
-
-  const addCustomUSP = (usp: USP) => {
-    setUSPs([...usps, { ...usp, id: generateUniqueId('custom-usp'), isCustomAdded: true }]);
-  };
-
-  const addCustomGeography = (geo: Geography) => {
-    setGeographies([...geographies, { ...geo, id: generateUniqueId('custom-geo'), isCustomAdded: true }]);
-  };
-
-  const addCustomKeyword = (keyword: Keyword) => {
-    setKeywords([...keywords, { ...keyword, id: generateUniqueId('custom-kw'), isCustomAdded: true }]);
-  };
-
-  const addCustomContentIdea = (idea: ContentIdea) => {
-    setContentIdeas([...contentIdeas, { ...idea, id: generateUniqueId('custom-content'), isCustomAdded: true, published: false }]);
-  };
-
-  const publishContent = (id: string) => {
-    setContentIdeas(prev => 
-      prev.map(idea => 
-        idea.id === id 
-          ? { ...idea, published: true, publishLink: `https://yourapp.com/content/${idea.id}` } 
-          : idea
-      )
-    );
-  };
-
-  const updateLandingPage = (page: Partial<LandingPage>) => {
-    setLandingPage(prev => ({ ...prev, ...page }));
-  };
-
-  const resetAll = () => {
-    setCurrentStep(1);
-    setBusiness(defaultBusiness);
-    setICPs([]);
-    setUSPs([]);
-    setGeographies([]);
-    setKeywords([]);
-    setContentIdeas([]);
-    setLandingPage(defaultLandingPage);
+  const contextValue: MarketingToolContextType = {
+    business,
+    setBusiness,
+    competitors,
+    setCompetitors,
+    addCompetitor,
+    updateCompetitor,
+    deleteCompetitor,
+    icps,
+    setIcps,
+    addIcp,
+    updateIcp,
+    deleteIcp,
+    usps,
+    setUsps,
+    addUsp,
+    updateUsp,
+    deleteUsp,
+    geographies,
+    setGeographies,
+    addGeography,
+    updateGeography,
+    deleteGeography,
+    keywords,
+    setKeywords,
+    addCustomKeyword,
+    contentIdeas,
+    setContentIdeas,
+    addContentIdea,
+    updateContentIdea,
+    deleteContentIdea,
+    publishedContent,
+    setPublishedContent,
+    addPublishedContent,
+    updatePublishedContent,
+    deletePublishedContent,
+    currentStep,
+    setCurrentStep,
+    isGenerating,
+    setIsGenerating,
+    isStorageLoaded,
+    setIsStorageLoaded,
+    keywordStats,
+    selectedKeywordStats,
+    setKeywordStats,
+    setSelectedKeywordStats,
+    setBusinessInfo,
+    setICPs,
+    addCustomICP,
+    setUSPs,
+    addCustomUSP,
+    addCustomGeography,
+    addCustomContentIdea,
+    publishContent,
+    landingPage,
+    updateLandingPage,
   };
 
   return (
-    <MarketingToolContext.Provider
-      value={{
-        currentStep,
-        setCurrentStep,
-        business,
-        setBusinessInfo,
-        icps,
-        setICPs,
-        addCustomICP,
-        usps,
-        setUSPs,
-        addCustomUSP,
-        geographies,
-        setGeographies,
-        addCustomGeography,
-        keywords,
-        setKeywords,
-        addCustomKeyword,
-        contentIdeas,
-        setContentIdeas,
-        addCustomContentIdea,
-        publishContent,
-        landingPage,
-        updateLandingPage,
-        isGenerating,
-        setIsGenerating,
-        resetAll,
-      }}
-    >
+    <MarketingToolContext.Provider value={contextValue}>
       {children}
     </MarketingToolContext.Provider>
   );
@@ -265,7 +461,7 @@ export const MarketingToolProvider: React.FC<{ children: React.ReactNode }> = ({
 
 export const useMarketingTool = () => {
   const context = useContext(MarketingToolContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useMarketingTool must be used within a MarketingToolProvider');
   }
   return context;

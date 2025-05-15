@@ -1,490 +1,731 @@
-import { toast } from '@/components/ui/use-toast';
-import { Business, ICP, USP, Geography, Keyword, ContentIdea } from '@/contexts/MarketingToolContext';
 
-// Base LLM request function
-async function makeLLMRequest(prompt: string) {
-  const apiKey = localStorage.getItem('openai_api_key') || '';
-  if (!apiKey) {
-    throw new Error('API key not found');
-  }
-
+export const generateGeographies = async (business: any, existingGeographies: any[] = []): Promise<any[]> => {
   try {
-    console.log('Making API request to OpenAI...');
+    const apiKey = localStorage.getItem('openai_api_key');
+    if (!apiKey) {
+      throw new Error('API key not found');
+    }
+
+    const existingRegions = existingGeographies.map(geo => geo.region.toLowerCase());
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `You are an expert marketing strategist helping a business identify the best target countries for expansion.
+            Given the following business information, analyze and recommend 2-3 countries to target.
+            For each country, provide:
+            - Region (country name)
+            - Market Size (in USD)
+            - Growth Rate (% annually)
+            - Competition Level (High, Medium, Low)
+            - A brief explanation of why this country is a good target (Why Target)
+            - A strategic recommendation for this market (Recommendation)
+            - Pricing Power (Strong, Moderate, Weak) - how much pricing leverage the business would have in this market
+            - Profitability Rating (High, Medium, Low) - expected profitability in this market
+            - Brand Personality (brief description) - what brand traits would resonate best in this market
+            Ensure the countries are diverse and not already in the existing list.
+            Respond in JSON format only.`
+          },
+          {
+            role: 'user',
+            content: `Business Name: ${business.name}\nIndustry: ${business.industry}\nDescription: ${business.description}\nTarget Market: ${business.targetMarket}`
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 1200
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+    }
+
+    const responseData = await response.json();
+    console.log('Geography generation response:', responseData);
+
+    const contentString = responseData.choices[0].message.content;
+    const parsedContent = JSON.parse(contentString);
+
+    let geographies = Array.isArray(parsedContent) ? parsedContent : [parsedContent];
+
+    // Filter out existing regions
+    geographies = geographies.filter(geo => !existingRegions.includes(geo.region.toLowerCase()));
+
+    return geographies.map((geo: any, index: number) => ({
+      id: `gen-geo-${Date.now()}-${index}`,
+      region: geo.Region || geo.region,
+      marketSize: geo['Market Size'] || geo.marketSize,
+      growthRate: geo['Growth Rate'] || geo.growthRate,
+      competitionLevel: geo.Competition || geo.competitionLevel,
+      whyTarget: geo['Why Target'] || geo.whyTarget,
+      recommendation: geo.Recommendation || geo.recommendation,
+      pricingPower: geo['Pricing Power'] || geo.pricingPower,
+      profitabilityRating: geo['Profitability Rating'] || geo.profitabilityRating,
+      brandPersonality: geo['Brand Personality'] || geo.brandPersonality,
+      isCustomAdded: false
+    }));
+  } catch (error) {
+    console.error('Geography generation error:', error);
+    throw error;
+  }
+};
+
+export const generateICPs = async (business: any, existingICPs: any[] = []): Promise<any[]> => {
+  try {
+    const apiKey = localStorage.getItem('openai_api_key');
+    if (!apiKey) {
+      throw new Error('API key not found');
+    }
+    
+    // Extract existing titles to avoid duplicates
+    const existingTitles = existingICPs.map(icp => icp.title.toLowerCase());
+    
+    // Include products in the prompt
+    const productsPrompt = business.products && business.products.length > 0 
+      ? `Products/Services: ${business.products.join(', ')}` 
+      : '';
     
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: "gpt-4.1",
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
-            content: 'You are a marketing assistant that helps businesses with their marketing strategy. Respond with JSON only.'
+            content: `You are an expert marketing strategist helping a business identify their ideal customer profiles (ICPs).
+            Based on the business information provided, generate 2-3 detailed ICPs that would be ideal targets for their products/services.
+            For each ICP provide:
+            - Title (concise name for this customer segment)
+            - Description (2-3 sentences about this customer type)
+            - Demographics (as a JSON object with companySize, industries, regions, jobTitles, and technologyAdoption)
+            - BlueOceanScore (a number from 1-10, where 1 is a "red ocean" with high competition and 10 is a "blue ocean" with little competition)
+            - ReachMethods (3-5 specific channels or methods to effectively reach this ICP)
+            - ProductSuggestions (3-5 specific ways to tailor or tweak products to better meet this ICP's needs)
+            - Pain Points (3-5 specific problems this ICP faces that the business could solve)
+            - Goals (3-5 key objectives this ICP is trying to achieve)
+            Ensure these are diverse, focused profiles that don't overlap too much with each other.
+            Make sure none of the ICPs duplicate existing ones.
+            ALWAYS provide complete demographic information, even if it needs to be generalized.
+            IMPORTANT: Return a valid JSON array only, with no additional text or markdown formatting.`
           },
           {
             role: 'user',
-            content: prompt
+            content: `Business Name: ${business.name}
+            Industry: ${business.industry}
+            Description: ${business.description}
+            Main Problem: ${business.mainProblem || 'Not specified'}
+            ${productsPrompt}`
           }
         ],
-        response_format: {
-          "type": "json_object"
-        },
-        temperature: 0.7
+        temperature: 0.7,
+        max_tokens: 1500
       })
     });
 
-    console.log('API response status:', response.status);
-    
     if (!response.ok) {
-      const errorBody = await response.text();
-      console.error('API error response:', errorBody);
-      
-      // Handle common status codes
-      if (response.status === 401) {
-        throw new Error('API key is invalid or expired');
-      } else if (response.status === 429) {
-        throw new Error('Rate limit exceeded. Please try again later');
-      } else {
-        throw new Error(`API request failed with status ${response.status}: ${errorBody}`);
-      }
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json();
-    console.log('API response received successfully');
+    const responseData = await response.json();
+    console.log('ICP generation response:', responseData);
+
+    const contentString = responseData.choices[0].message.content;
+    console.log('Raw ICP content:', contentString);
     
-    // Extract content from the response
-    const content = data.choices[0].message.content;
-    console.log('Raw response content:', content);
+    // Remove any markdown formatting or extra characters that might be in the response
+    const cleanedContentString = contentString
+      .replace(/```json|```/g, '') // Remove markdown code blocks
+      .replace(/^\s*\[|\]\s*$/g, '[,]') // Ensure we have opening and closing brackets
+      .trim();
     
+    console.log('Cleaned content:', cleanedContentString);
+    
+    // Attempt to parse the cleaned JSON
+    let parsedContent;
     try {
-      // Parse the JSON content
-      const parsed = JSON.parse(content);
-      console.log('Parsed response:', parsed);
-      return parsed;
+      // Handle both array and object formats
+      if (cleanedContentString.trim().startsWith('[')) {
+        parsedContent = JSON.parse(cleanedContentString);
+      } else {
+        // Try to parse as a single object
+        parsedContent = JSON.parse(`[${cleanedContentString}]`);
+      }
     } catch (parseError) {
-      // If we can use the content directly (it's already parsed by response.json())
-      if (typeof content === 'object') {
-        console.log('Content is already an object, using directly');
-        return content;
-      }
-      console.error('Failed to parse response as JSON:', content);
-      throw new Error('Failed to parse AI response as JSON');
-    }
-  } catch (error) {
-    console.error('LLM request failed:', error);
-    throw error;
-  }
-}
-
-// Generate ICPs based on business info
-export async function generateICPs(business: Business, count = 3, existingICPs: ICP[] = []): Promise<ICP[]> {
-  const existingTitles = existingICPs.map(icp => icp.title).join(", ");
-  const prompt = `Generate ${count} detailed Ideal Customer Profiles (ICPs) for a ${business.industry} business named "${business.name}" that ${business.description}. Their main problem to solve is "${business.mainProblem}".
-
-  ${existingICPs.length > 0 ? `They already have these ICPs: ${existingTitles}. Generate NEW ones that are different from these.` : ''}
-
-  Each ICP should include:
-  - A title (e.g., "Enterprise IT Decision Makers")
-  - A description
-  - Demographics information
-  - At least 3 pain points
-  - At least 3 goals
-
-  Format the response as a JSON array with the following structure:
-  [
-    {
-      "id": "1",
-      "title": "Title here",
-      "description": "Description here",
-      "demographics": "Demographics here",
-      "painPoints": ["Pain point 1", "Pain point 2", "Pain point 3"],
-      "goals": ["Goal 1", "Goal 2", "Goal 3"]
-    }
-  ]
-  `;
-
-  try {
-    const response = await makeLLMRequest(prompt);
-    console.log('ICP response structure:', response);
-    
-    // Get the ICPs array, which might be directly in the response
-    // or nested under an "ICPs" property
-    let icpsArray;
-    
-    if (response.ICPs) {
-      // Handle capitalized "ICPs" property
-      console.log('Found ICPs property (capitalized)');
-      icpsArray = response.ICPs;
-    } else if (response.icps) {
-      // Handle lowercase "icps" property
-      console.log('Found icps property (lowercase)');
-      icpsArray = response.icps;
-    } else if (Array.isArray(response)) {
-      // Handle direct array response
-      console.log('Response is directly an array');
-      icpsArray = response;
-    } else {
-      // If none of the above, log the response keys to help debugging
-      console.error('Could not find ICPs array in response. Keys:', Object.keys(response));
-      throw new Error('Invalid response format: Could not find ICPs array');
-    }
-    
-    // Ensure we have an array to work with
-    if (!Array.isArray(icpsArray)) {
-      console.error('Expected an array but got:', typeof icpsArray, icpsArray);
-      throw new Error('Invalid response format: Expected an array of ICPs');
-    }
-    
-    return icpsArray.map((icp: any, index: number) => ({
-      ...icp,
-      id: icp.id || `llm-${Date.now()}-${index}`,
-      // Ensure demographics is a string if it's an object
-      demographics: typeof icp.demographics === 'object' 
-        ? JSON.stringify(icp.demographics) 
-        : icp.demographics,
-    }));
-  } catch (error: any) {
-    const errorMessage = error?.message || 'Unknown error occurred';
-    console.error('Failed to generate ICPs:', errorMessage);
-    toast.error(`Failed to generate ICPs: ${errorMessage}`);
-    throw error;
-  }
-}
-
-// Generate USPs based on business and ICPs
-export async function generateUSPs(business: Business, icps: ICP[], existingUSPs: USP[] = []): Promise<USP[]> {
-  const icpTitles = icps.map(icp => icp.title).join(", ");
-  const existingTitles = existingUSPs.map(usp => usp.title).join(", ");
-  const prompt = `Generate 3 Unique Selling Points (USPs) for a ${business.industry} business named "${business.name}" that ${business.description}. 
-  Their main problem to solve is "${business.mainProblem}" and they've identified these ideal customer profiles: ${icpTitles}.
-
-  ${existingUSPs.length > 0 ? `They already have these USPs: ${existingTitles}. Generate NEW ones that are different from these.` : ''}
-
-  Each USP should include:
-  - A title (e.g., "AI-Powered Automation")
-  - A description
-  - The target ICP (choose from the provided ICPs)
-  - A value proposition statement
-
-  Format the response as a JSON array with the following structure:
-  [
-    {
-      "id": "1",
-      "title": "Title here",
-      "description": "Description here",
-      "targetICP": "One of the ICP titles",
-      "valueProposition": "Value proposition here"
-    }
-  ]
-  `;
-
-  try {
-    const response = await makeLLMRequest(prompt);
-    console.log('USP response structure:', response);
-    
-    // Get the USPs array, which might be directly in the response
-    // or nested under a "USPs" property (case-insensitive)
-    let uspsArray;
-    
-    if (response.USPs) {
-      console.log('Found USPs property (capitalized)');
-      uspsArray = response.USPs;
-    } else if (response.usps) {
-      console.log('Found usps property (lowercase)');
-      uspsArray = response.usps;
-    } else if (Array.isArray(response)) {
-      console.log('Response is directly an array');
-      uspsArray = response;
-    } else {
-      console.error('Could not find USPs array in response. Keys:', Object.keys(response));
-      throw new Error('Invalid response format: Could not find USPs array');
-    }
-    
-    // Ensure we have an array to work with
-    if (!Array.isArray(uspsArray)) {
-      console.error('Expected an array but got:', typeof uspsArray, uspsArray);
-      throw new Error('Invalid response format: Expected an array of USPs');
-    }
-    
-    return uspsArray.map((usp: any, index: number) => ({
-      ...usp,
-      id: usp.id || `llm-${Date.now()}-${index}`,
-    }));
-  } catch (error: any) {
-    const errorMessage = error?.message || 'Unknown error occurred';
-    console.error('Failed to generate USPs:', errorMessage);
-    toast.error(`Failed to generate USPs: ${errorMessage}`);
-    throw error;
-  }
-}
-
-// Generate Geographies based on business info
-export async function generateGeographies(business: Business, existingGeographies: Geography[] = []): Promise<Geography[]> {
-  const existingRegions = existingGeographies.map(geo => geo.region).join(", ");
-  const prompt = `Generate 3 specific target countries for a ${business.industry} business named "${business.name}" that ${business.description}. 
-  Their main problem to solve is "${business.mainProblem}".
-
-  ${existingGeographies.length > 0 ? `They already have these regions: ${existingRegions}. Generate NEW countries that are different from these.` : ''}
-
-  Each geography should include:
-  - A specific country name (e.g., "United States", "Singapore", "Germany")
-  - The market size for this specific country
-  - Growth rate in this country
-  - Competition level in this country
-  - A persuasive explanation of why this country should be targeted (2-3 sentences)
-  - A strategic recommendation for entering that specific country's market
-
-  Format the response as a JSON array with the following structure:
-  [
-    {
-      "id": "1",
-      "region": "Specific country name here",
-      "marketSize": "Market size here",
-      "growthRate": "Growth rate here",
-      "competitionLevel": "Competition level here",
-      "whyTarget": "Explanation of why this country should be targeted",
-      "recommendation": "Recommendation here"
-    }
-  ]
-  `;
-
-  try {
-    const response = await makeLLMRequest(prompt);
-    console.log('Geography response structure:', response);
-    
-    // Get the geographies array, which might be directly in the response
-    // or nested under different property names ("geographies", "markets", etc.)
-    let geographiesArray;
-    
-    if (response.Geographies) {
-      console.log('Found Geographies property (capitalized)');
-      geographiesArray = response.Geographies;
-    } else if (response.geographies) {
-      console.log('Found geographies property (lowercase)');
-      geographiesArray = response.geographies;
-    } else if (response.Markets) {
-      console.log('Found Markets property (capitalized)');
-      geographiesArray = response.Markets;
-    } else if (response.markets) {
-      console.log('Found markets property (lowercase)');
-      geographiesArray = response.markets;
-    } else if (Array.isArray(response)) {
-      console.log('Response is directly an array');
-      geographiesArray = response;
-    } else {
-      // Check all keys and log them for debugging
-      console.error('Could not find geographies array in response. Keys:', Object.keys(response));
+      console.error('Error parsing JSON response:', parseError);
       
-      // Check if any other key might contain an array with region properties
-      for (const key of Object.keys(response)) {
-        if (Array.isArray(response[key]) && response[key].length > 0 && response[key][0].region) {
-          console.log(`Found array with region properties in key: ${key}`);
-          geographiesArray = response[key];
-          break;
+      // More aggressive cleaning if parsing fails
+      try {
+        // Try to extract just the JSON part using regex
+        const jsonMatch = contentString.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          parsedContent = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error('Could not find valid JSON in the response');
         }
-      }
-      
-      // If we still couldn't find a suitable array
-      if (!geographiesArray) {
-        throw new Error('Invalid response format: Could not find geographies array');
+      } catch (secondParseError) {
+        console.error('Second parse attempt failed:', secondParseError);
+        console.log('Raw content for debugging:', contentString);
+        
+        // As a last resort, create a basic ICP from the business information
+        return [{
+          id: `gen-icp-${Date.now()}-0`,
+          title: `${business.industry} Customer`,
+          description: `A typical customer in the ${business.industry} industry that could benefit from ${business.name}'s services.`,
+          demographics: JSON.stringify({
+            companySize: "Various sizes",
+            industries: [business.industry || "Multiple industries"],
+            regions: ["Global"],
+            jobTitles: ["Decision makers"],
+            technologyAdoption: "Mixed"
+          }),
+          blueOceanScore: 5,
+          reachMethods: ["Industry events", "LinkedIn marketing", "Email campaigns"],
+          productSuggestions: ["Customized solutions", "Mobile integration", "Analytics dashboard"],
+          painPoints: ["Lack of expertise", "Inefficient processes", "Difficulty tracking results"],
+          goals: ["Improve efficiency", "Increase revenue", "Better customer experience"],
+          isCustomAdded: false
+        }];
       }
     }
     
-    // Ensure we have an array to work with
-    if (!Array.isArray(geographiesArray)) {
-      console.error('Expected an array but got:', typeof geographiesArray, geographiesArray);
-      throw new Error('Invalid response format: Expected an array of geographies');
+    // Handle different response formats
+    let icps = [];
+    if (Array.isArray(parsedContent)) {
+      icps = parsedContent;
+    } else if (parsedContent && typeof parsedContent === 'object') {
+      if (parsedContent.idealCustomerProfiles) {
+        icps = parsedContent.idealCustomerProfiles;
+      } else if (parsedContent.icps) {
+        icps = parsedContent.icps;
+      } else {
+        // If we can't find an array of ICPs, use the whole object as a single ICP
+        icps = [parsedContent];
+      }
     }
     
-    // Generate unique IDs and filter out any potential duplicates based on region name
-    const existingRegionNames = new Set(existingGeographies.map(geo => geo.region.toLowerCase().trim()));
+    // Validate that we have data
+    if (!icps || icps.length === 0) {
+      throw new Error('No valid ICPs found in response');
+    }
     
-    const newGeographies = geographiesArray
-      .filter(geo => !existingRegionNames.has(geo.region.toLowerCase().trim()))
-      .map((geo, index) => ({
-        ...geo,
-        id: `llm-${Date.now()}-${index}`,
-        // Ensure whyTarget exists, use a default if not present
-        whyTarget: geo.whyTarget || "This geography aligns with your business goals and presents a strong market opportunity."
-      }));
+    console.log('Parsed ICPs:', icps);
     
-    console.log(`Generated ${newGeographies.length} new unique geographies`);
-    return newGeographies;
-  } catch (error: any) {
-    const errorMessage = error?.message || 'Unknown error occurred';
-    console.error('Failed to generate geographies:', errorMessage);
-    toast.error(`Failed to generate geographies: ${errorMessage}`);
+    // Filter out any ICPs that duplicate existing ones
+    icps = icps.filter(icp => !existingTitles.includes((icp.title || '').toLowerCase()));
+    
+    // Format the ICPs into our standard structure
+    return icps.map((icp: any, index: number) => ({
+      id: `gen-icp-${Date.now()}-${index}`,
+      title: icp.title || icp.Title || `Customer Profile ${index + 1}`,
+      description: icp.description || icp.Description || `Customer profile for ${business.name}`,
+      demographics: typeof icp.demographics === 'string' ? 
+        icp.demographics : 
+        JSON.stringify(icp.demographics || icp.Demographics || {
+          companySize: "Various",
+          industries: [business.industry || "Multiple"],
+          regions: ["Global"],
+          jobTitles: ["Various roles"],
+          technologyAdoption: "Mixed"
+        }),
+      blueOceanScore: icp.blueOceanScore || icp.BlueOceanScore || 5,
+      reachMethods: Array.isArray(icp.reachMethods || icp.ReachMethods) ? 
+        (icp.reachMethods || icp.ReachMethods) : 
+        [(icp.reachMethods || icp.ReachMethods || "Digital marketing")],
+      productSuggestions: Array.isArray(icp.productSuggestions || icp.ProductSuggestions) ? 
+        (icp.productSuggestions || icp.ProductSuggestions) : 
+        [(icp.productSuggestions || icp.ProductSuggestions || "Customized solution")],
+      painPoints: Array.isArray(icp.painPoints || icp.PainPoints) ? 
+        (icp.painPoints || icp.PainPoints) : 
+        [(icp.painPoints || icp.PainPoints || "Industry challenges")],
+      goals: Array.isArray(icp.goals || icp.Goals) ? 
+        (icp.goals || icp.Goals) : 
+        [(icp.goals || icp.Goals || "Business improvement")],
+      isCustomAdded: false
+    }));
+  } catch (error) {
+    console.error('ICP generation error:', error);
     throw error;
   }
-}
+};
 
-// Generate keywords based on business, ICPs, USPs, geographies
-export async function generateKeywords(
-  business: Business, 
-  icps: ICP[], 
-  usps: USP[], 
-  existingKeywords: Keyword[] = [],
-  geographies: Geography[] = []
-): Promise<Keyword[]> {
-  const existingTerms = existingKeywords.map(kw => kw.term).join(", ");
-  const keyICPs = icps.slice(0, 3).map(icp => icp.title).join(", ");
-  const keyUSPs = usps.slice(0, 3).map(usp => usp.title).join(", ");
-  const keyGeos = geographies && geographies.length > 0 
-    ? geographies.slice(0, 3).map(geo => geo.region).join(", ") 
-    : "global market";
-  
-  console.log(`Generating keywords with existing terms: ${existingTerms}`);
-  console.log(`Using ICPs: ${keyICPs}`);
-  console.log(`Using USPs: ${keyUSPs}`);
-  console.log(`Using Geographies: ${keyGeos}`);
-  
-  const prompt = `Generate 3 highly targeted keywords for a ${business.industry} business named "${business.name}" that ${business.description}. 
-  Their main problem to solve is "${business.mainProblem}".
-
-  They are targeting these customer profiles: ${keyICPs}.
-  Their unique selling points include: ${keyUSPs}.
-  They are focusing on these geographic markets: ${keyGeos}.
-
-  ${existingKeywords.length > 0 
-    ? `They already have these keywords: ${existingTerms}. Generate NEW keywords that are different from these and more specific. Focus on long-tail keywords that might have less competition.` 
-    : 'Focus on a mix of high-volume and niche keywords that would be valuable for their business.'}
-
-  Each keyword should include:
-  - The term (e.g., "AI Marketing Solutions for Enterprise")
-  - Estimated search volume
-  - Keyword difficulty
-  - Relevance to business
-  - Related ICP (choose one from: ${keyICPs})
-
-  Format the response as a JSON array with the following structure:
-  [
-    {
-      "id": "1",
-      "term": "Keyword term here",
-      "searchVolume": "Search volume here",
-      "difficulty": "Difficulty level here",
-      "relevance": "Relevance rating here",
-      "relatedICP": "Related ICP here"
-    }
-  ]
-  `;
-
+export const generateUSPs = async (business: any, icps: any[], existingUSPs: any[] = []): Promise<any[]> => {
   try {
-    const response = await makeLLMRequest(prompt);
-    console.log('Keywords response structure:', response);
-    
-    // Get the keywords array
-    let keywordsArray;
-    
-    if (response.Keywords) {
-      console.log('Found Keywords property (capitalized)');
-      keywordsArray = response.Keywords;
-    } else if (response.keywords) {
-      console.log('Found keywords property (lowercase)');
-      keywordsArray = response.keywords;
-    } else if (Array.isArray(response)) {
-      console.log('Response is directly an array');
-      keywordsArray = response;
-    } else {
-      console.error('Could not find keywords array in response. Keys:', Object.keys(response));
-      throw new Error('Invalid response format: Could not find keywords array');
+    const apiKey = localStorage.getItem('openai_api_key');
+    if (!apiKey) {
+      throw new Error('API key not found');
     }
     
-    // Ensure we have an array to work with
-    if (!Array.isArray(keywordsArray)) {
-      console.error('Expected an array but got:', typeof keywordsArray, keywordsArray);
-      throw new Error('Invalid response format: Expected an array of keywords');
-    }
+    // Extract existing titles to avoid duplicates
+    const existingTitles = existingUSPs.map(usp => usp.title.toLowerCase());
     
-    // Filter out any duplicates from existing keywords
-    const existingTermsLower = existingKeywords.map(kw => kw.term.toLowerCase().trim());
-    const filteredKeywords = keywordsArray.filter(
-      keyword => !existingTermsLower.includes(keyword.term.toLowerCase().trim())
+    // Include ICPs in the prompt
+    const icpPrompt = icps.length > 0 
+      ? `ICPs: ${icps.map(icp => `${icp.title} - ${icp.description}`).join('\n')}` 
+      : 'No ICPs provided.';
+    
+    // Include products in the prompt
+    const productsPrompt = business.products && business.products.length > 0 
+      ? `Products/Services: ${business.products.join(', ')}` 
+      : '';
+    
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `You are an expert marketing strategist helping a business identify their unique selling propositions (USPs).
+            Based on the business information and ICPs provided, generate 2-3 strong USPs that would appeal to their ideal customers.
+            For each USP provide:
+            - Title (concise name for this USP)
+            - Description (2-3 sentences explaining this USP)
+            - Target ICP (which ICP from the provided list this USP primarily targets)
+            - Value Proposition (clear statement of the value delivered)
+            Ensure these are compelling differentiators that are meaningful to the target audience.
+            Make sure none of the USPs duplicate existing ones.
+            Respond in JSON format only.`
+          },
+          {
+            role: 'user',
+            content: `Business Name: ${business.name}
+            Industry: ${business.industry}
+            Description: ${business.description}
+            Main Problem: ${business.mainProblem || 'Not specified'}
+            ${productsPrompt}
+            
+            ${icpPrompt}`
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 1200
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+    }
+
+    const responseData = await response.json();
+    console.log('USP generation response:', responseData);
+
+    const contentString = responseData.choices[0].message.content;
+    const parsedContent = JSON.parse(contentString);
+    
+    // Ensure we have an array of USPs
+    let usps = Array.isArray(parsedContent) ? parsedContent : [parsedContent];
+    
+    // Filter out any USPs that duplicate existing ones
+    usps = usps.filter(usp => !existingTitles.includes(usp.title.toLowerCase()));
+    
+    return usps.map((usp: any, index: number) => ({
+      id: `gen-usp-${Date.now()}-${index}`,
+      title: usp.title,
+      description: usp.description,
+      targetICP: usp.targetICP,
+      valueProposition: usp.valueProposition,
+      isCustomAdded: false
+    }));
+  } catch (error) {
+    console.error('USP generation error:', error);
+    throw error;
+  }
+};
+
+export const generateKeywords = async (
+  business: any, 
+  icps: any[] = [], 
+  usps: any[] = [], 
+  existingKeywords: any[] = [],
+  geographies: any[] = []
+): Promise<any[]> => {
+  try {
+    const apiKey = localStorage.getItem('openai_api_key');
+    if (!apiKey) {
+      throw new Error('API key not found');
+    }
+
+    // Extract existing terms to avoid duplicates
+    const existingTerms = existingKeywords.map(kw => kw.term.toLowerCase());
+    
+    // Prepare all business data as key-value pairs
+    const businessData = {
+      name: business.name,
+      industry: business.industry,
+      description: business.description,
+      mainProblem: business.mainProblem || 'Not specified',
+      mainSolution: business.mainSolution || 'Not specified',
+      targetAudience: business.targetAudience || 'Not specified',
+      existingCustomers: business.existingCustomers || 'Not specified',
+      products: business.products || []
+    };
+    
+    // Prepare ICP data
+    const icpData = icps.map(icp => ({
+      title: icp.title,
+      description: icp.description,
+      painPoints: Array.isArray(icp.painPoints) ? icp.painPoints : [icp.painPoints],
+      goals: Array.isArray(icp.goals) ? icp.goals : [icp.goals],
+      demographics: typeof icp.demographics === 'string' ? icp.demographics : JSON.stringify(icp.demographics),
+      blueOceanScore: icp.blueOceanScore
+    }));
+    
+    // Prepare USP data
+    const uspData = usps.map(usp => ({
+      title: usp.title,
+      description: usp.description,
+      targetICP: usp.targetICP,
+      valueProposition: usp.valueProposition
+    }));
+    
+    // Prepare geography data
+    const geoData = geographies.map(geo => ({
+      region: geo.region,
+      marketSize: geo.marketSize,
+      growthRate: geo.growthRate,
+      competitionLevel: geo.competitionLevel,
+      whyTarget: geo.whyTarget,
+      pricingPower: geo.pricingPower,
+      profitabilityRating: geo.profitabilityRating,
+      brandPersonality: geo.brandPersonality
+    }));
+    
+    // Include existing keywords to avoid duplication
+    const existingKeywordPrompt = existingTerms.length > 0
+      ? `Existing Keywords (DO NOT DUPLICATE): ${existingTerms.join(', ')}` 
+      : '';
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `You are an expert SEO strategist helping a business identify valuable keywords.
+            Based on all the provided business data, generate EXACTLY 15 highly relevant keywords.
+            For each keyword provide:
+            - Term (the actual search term or phrase)
+            - Search Volume (estimated monthly searches, e.g., "1,000-5,000")
+            - Difficulty (Low, Medium-Low, Medium, Medium-High, High)
+            - Relevance (Low, Medium, High)
+            - Related ICP (which ICP from the provided list this keyword primarily targets)
+            - Competitor Usage (Low, Medium, High - how frequently competitors are using this keyword)
+            
+            Ensure keywords are varied, specific, and have commercial intent where appropriate.
+            Include some long-tail keywords with lower competition.
+            Generate keywords that cover all geographic regions and ICPs, but prioritize those with higher profitability.
+            DO NOT INCLUDE ANY KEYWORDS THAT ARE ALREADY IN THE EXISTING LIST.
+            Respond in JSON format only.`
+          },
+          {
+            role: 'user',
+            content: JSON.stringify({
+              business: businessData,
+              icps: icpData,
+              usps: uspData,
+              geographies: geoData,
+              existingKeywords: existingKeywordPrompt
+            })
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 2000
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+    }
+
+    const responseData = await response.json();
+    console.log('Keywords generation response:', responseData);
+
+    const contentString = responseData.choices[0].message.content;
+    const parsedContent = JSON.parse(contentString);
+    
+    // Ensure we have an array of keywords
+    let keywords = Array.isArray(parsedContent) ? parsedContent : [parsedContent];
+    
+    // Filter out any keywords that duplicate existing ones
+    keywords = keywords.filter(kw => 
+      !existingTerms.includes((kw.term || kw.Term || '').toLowerCase())
     );
     
-    console.log(`Generated ${keywordsArray.length} keywords, ${filteredKeywords.length} are unique`);
-    
-    return filteredKeywords.map((keyword: any, index: number) => ({
-      ...keyword,
-      id: keyword.id || `llm-${Date.now()}-${index}`,
+    return keywords.map((keyword: any, index: number) => ({
+      id: `gen-kw-${Date.now()}-${index}`,
+      term: keyword.term || keyword.Term,
+      searchVolume: keyword.searchVolume || keyword['Search Volume'],
+      difficulty: keyword.difficulty || keyword.Difficulty,
+      relevance: keyword.relevance || keyword.Relevance,
+      relatedICP: keyword.relatedICP || keyword['Related ICP'],
+      competitorUsage: keyword.competitorUsage || keyword['Competitor Usage'],
+      isCustomAdded: false
     }));
-  } catch (error: any) {
-    const errorMessage = error?.message || 'Unknown error occurred';
-    console.error('Failed to generate keywords:', errorMessage);
-    toast.error(`Failed to generate keywords: ${errorMessage}`);
+  } catch (error) {
+    console.error('Keywords generation error:', error);
     throw error;
   }
-}
+};
 
-// Generate content ideas based on business, ICPs, and keywords
-export async function generateContentIdeas(business: Business, icps: ICP[], keywords: Keyword[], existingIdeas: ContentIdea[] = []): Promise<ContentIdea[]> {
-  const existingTitles = existingIdeas.map(idea => idea.title).join(", ");
-  const prompt = `Generate 3 content ideas for a ${business.industry} business named "${business.name}" that ${business.description}. 
-  Their main problem to solve is "${business.mainProblem}".
-
-  ${existingIdeas.length > 0 ? `They already have these content ideas: ${existingTitles}. Generate NEW ones that are different from these.` : ''}
-
-  Each content idea should include:
-  - A catchy title
-  - Content type (e.g., Blog Post, Whitepaper, Case Study)
-  - Target ICP (choose from: ${icps.map(icp => icp.title).join(", ")})
-  - Target keywords (2-3 relevant keywords)
-  - Content outline (3-5 main points)
-  - Estimated value to audience (e.g., High, Medium, Low)
-
-  Format the response as a JSON array with the following structure:
-  [
-    {
-      "id": "1",
-      "title": "Title here",
-      "type": "Content type here",
-      "targetICP": "Target ICP here",
-      "targetKeywords": ["Keyword 1", "Keyword 2"],
-      "outline": ["Point 1", "Point 2", "Point 3"],
-      "estimatedValue": "Value estimation here"
-    }
-  ]
-  `;
-
+export const generateContentIdeas = async (
+  business: any,
+  icps: any[],
+  keywords: any[],
+  usps: any[] = [],
+  geographies: any[] = [],
+  existingIdeas: any[] = []
+): Promise<any[]> => {
   try {
-    const response = await makeLLMRequest(prompt);
-    console.log('Content ideas response structure:', response);
-    
-    // Get the content ideas array
-    let ideasArray;
-    
-    if (response.ContentIdeas) {
-      console.log('Found ContentIdeas property (capitalized)');
-      ideasArray = response.ContentIdeas;
-    } else if (response.contentIdeas) {
-      console.log('Found contentIdeas property (lowercase)');
-      ideasArray = response.contentIdeas;
-    } else if (Array.isArray(response)) {
-      console.log('Response is directly an array');
-      ideasArray = response;
-    } else {
-      console.error('Could not find content ideas array in response. Keys:', Object.keys(response));
-      throw new Error('Invalid response format: Could not find content ideas array');
+    const apiKey = localStorage.getItem('openai_api_key');
+    if (!apiKey) {
+      throw new Error('API key not found');
     }
+
+    const existingTitles = existingIdeas.map(idea => idea.title.toLowerCase());
     
-    // Ensure we have an array to work with
-    if (!Array.isArray(ideasArray)) {
-      console.error('Expected an array but got:', typeof ideasArray, ideasArray);
-      throw new Error('Invalid response format: Expected an array of content ideas');
+    // Create prompts from data
+    const businessPrompt = `Business Name: ${business.name}\nIndustry: ${business.industry}\nDescription: ${business.description}\nTarget Market: ${business.targetMarket}`;
+    
+    const icpPrompt = icps.map(icp => 
+      `ICP: ${icp.title}\nDescription: ${icp.description}\nPain Points: ${icp.painPoints}\nGoals: ${icp.goals}`
+    ).join('\n\n');
+    
+    const keywordPrompt = `Keywords: ${keywords.map(k => k.term).join(', ')}`;
+    
+    // Include USPs in prompt
+    const uspPrompt = usps.length > 0 
+      ? `USPs: ${usps.map(usp => `${usp.title} - ${usp.description}`).join('\n')}`
+      : '';
+    
+    // Include Geographies in prompt
+    const geoPrompt = geographies.length > 0
+      ? `Target Geographies: ${geographies.map(geo => `${geo.region} (${geo.marketSize}, ${geo.growthRate} growth)`).join('\n')}`
+      : '';
+    
+    // Include products in the prompt
+    const productsPrompt = business.products && business.products.length > 0 
+      ? `Products/Services: ${business.products.join(', ')}` 
+      : '';
+    
+    // Include existing content titles to avoid duplication
+    const existingContentPrompt = existingTitles.length > 0
+      ? `Existing Content (DO NOT DUPLICATE): ${existingTitles.join(', ')}`
+      : '';
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `You are an expert content strategist helping a business create valuable marketing content. 
+            Generate 2-3 unique, high-value content ideas based on the provided business information, ICPs, USPs, target geographies, and keywords. 
+            Each content idea should include: title, content type (Blog Post, White Paper, eBook, Webinar, Case Study, Infographic, Video), 
+            target ICP, target keywords (2-3 from provided list), a detailed outline (5-7 points), and estimated value (Low, Medium, High).
+            Make sure titles are catchy, specific, and include keywords. Content should address pain points and goals.
+            DO NOT DUPLICATE any existing content titles.
+            Respond in JSON format only.`
+          },
+          {
+            role: 'user',
+            content: `${businessPrompt}\n\n${icpPrompt}\n\n${keywordPrompt}\n\n${uspPrompt}\n\n${geoPrompt}\n\n${productsPrompt}\n\n${existingContentPrompt}`
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 2000
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
     }
+
+    const responseData = await response.json();
+    console.log('Content generation response:', responseData);
+
+    const contentString = responseData.choices[0].message.content;
+    const parsedContent = JSON.parse(contentString);
     
-    return ideasArray.map((idea: any, index: number) => ({
-      ...idea,
-      id: idea.id || `llm-${Date.now()}-${index}`,
-      published: false,
+    // Ensure proper array format and add IDs
+    let contentIdeas = Array.isArray(parsedContent) ? parsedContent : [parsedContent];
+    
+    return contentIdeas.map((idea: any, index: number) => ({
+      id: `gen-content-${Date.now()}-${index}`,
+      title: idea.title,
+      type: idea.type || idea.contentType,
+      targetICP: idea.targetICP,
+      targetKeywords: idea.targetKeywords,
+      outline: idea.outline,
+      estimatedValue: idea.estimatedValue,
+      published: false
     }));
-  } catch (error: any) {
-    const errorMessage = error?.message || 'Unknown error occurred';
-    console.error('Failed to generate content ideas:', errorMessage);
-    toast.error(`Failed to generate content ideas: ${errorMessage}`);
+  } catch (error) {
+    console.error('Content generation error:', error);
     throw error;
   }
-}
+};
+
+export const validateCustomICP = async (icp: any, business: any): Promise<{isValid: boolean, feedback: string}> => {
+  try {
+    const apiKey = localStorage.getItem('openai_api_key');
+    if (!apiKey) {
+      throw new Error('API key not found');
+    }
+    
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `You are an expert marketing strategist who evaluates proposed Ideal Customer Profiles (ICPs) for businesses.
+            Your task is to determine if a proposed ICP is viable and realistic for the given business.
+            Consider the following criteria:
+            1. Alignment with the business's products/services
+            2. Market size and accessibility
+            3. Coherence of the ICP's characteristics
+            4. Feasibility of targeting this segment
+            
+            Return a JSON object with:
+            - isValid: boolean (true if the ICP seems valid, false if it's extremely improbable)
+            - feedback: string (constructive feedback explaining your assessment)
+            
+            Be conservative in rejecting ICPs - only mark as invalid if there are serious problems.`
+          },
+          {
+            role: 'user',
+            content: `Business Information:
+            Name: ${business.name}
+            Industry: ${business.industry}
+            Description: ${business.description}
+            
+            Proposed ICP:
+            Title: ${icp.title}
+            Description: ${icp.description}
+            Demographics: ${icp.demographics}
+            Pain Points: ${icp.painPoints.join(', ')}
+            Goals: ${icp.goals.join(', ')}
+            `
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 500
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+    }
+
+    const responseData = await response.json();
+    console.log('ICP validation response:', responseData);
+
+    const contentString = responseData.choices[0].message.content;
+    const parsedContent = JSON.parse(contentString);
+    
+    return {
+      isValid: parsedContent.isValid,
+      feedback: parsedContent.feedback
+    };
+  } catch (error) {
+    console.error('ICP validation error:', error);
+    // Default to valid in case of error
+    return {
+      isValid: true,
+      feedback: "Couldn't validate due to an error, proceeding with caution."
+    };
+  }
+};
+
+export const generateCompetitiveAnalysis = async (business: any, usp: any): Promise<any> => {
+  try {
+    const apiKey = localStorage.getItem('openai_api_key');
+    if (!apiKey) {
+      throw new Error('API key not found');
+    }
+    
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `You are an expert market analyst helping a business understand the competitive landscape for one of their Unique Selling Points (USPs).
+            Based on the business information and USP provided, generate a competitive analysis that includes:
+            1. Market Substitutes: List 2-3 closest substitutes or competitors in the market
+            2. Competitor Advantages: What advantages these competitors have over the business
+            3. Business Advantages: What advantages the business has over these competitors
+            4. Pricing Strategy: Recommended pricing strategy for this USP (e.g., premium, value, freemium, subscription)
+            5. Monetization Plan: Specific monetization suggestions for this USP
+            6. USP Health: An overall assessment of the USP's strength (Strong, Moderate, Needs Improvement)
+            7. Health Reasoning: Brief explanation of the USP health assessment
+            
+            Respond in JSON format with these exact keys.`
+          },
+          {
+            role: 'user',
+            content: `Business Name: ${business.name}
+            Industry: ${business.industry}
+            Description: ${business.description}
+            
+            USP Title: ${usp.title}
+            USP Description: ${usp.description}
+            Target ICP: ${usp.targetICP}
+            Value Proposition: ${usp.valueProposition}`
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 1000
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+    }
+
+    const responseData = await response.json();
+    console.log('Competitive analysis response:', responseData);
+
+    const contentString = responseData.choices[0].message.content;
+    return JSON.parse(contentString);
+  } catch (error) {
+    console.error('Competitive analysis error:', error);
+    throw error;
+  }
+};
