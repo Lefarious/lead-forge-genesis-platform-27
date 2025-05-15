@@ -47,7 +47,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           <div className="flex items-center">
             <div className={cn("font-bold text-2xl bg-clip-text text-transparent", 
               isDarkMode ? "bg-gradient-to-r from-purple-400 to-purple-600" : "bg-gradient-to-r from-marketing-600 to-marketing-800")}>
-              Inkwell AI
+              Marketing AI
             </div>
             <div className="hidden md:flex ml-10 gap-2">
               {steps.map((step, index) => {
@@ -100,7 +100,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       </main>
       <footer className={cn("border-t py-4", isDarkMode ? "bg-gray-900 border-gray-700" : "bg-white")}>
         <div className={cn("container text-center text-sm", isDarkMode ? "text-gray-400" : "text-gray-500")}>
-          &copy; {new Date().getFullYear()} Inkwell AI. All rights reserved.
+          &copy; {new Date().getFullYear()} Marketing AI. All rights reserved.
         </div>
       </footer>
     </div>
