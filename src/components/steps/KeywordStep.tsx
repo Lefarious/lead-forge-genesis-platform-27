@@ -33,6 +33,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import KeywordOptimizer from '@/components/keywords/KeywordOptimizer';
+import KeywordDataVisualizer, { KeywordStats } from '@/components/keywords/KeywordDataVisualizer';
+import { fetchKeywordStats, optimizeKeywords, generateMoreSynonyms } from '@/services/keywordsApiService';
 
 interface KeywordStepProps {}
 
@@ -57,7 +60,8 @@ const getCompetitorUsageColor = (usage: string) => {
 const KeywordStep: React.FC<KeywordStepProps> = () => {
   const { 
     business, icps, usps, geographies, keywords, setKeywords, addCustomKeyword, 
-    setCurrentStep, isGenerating, setIsGenerating 
+    setCurrentStep, isGenerating, setIsGenerating, keywordStats, setKeywordStats,
+    selectedKeywordStats, setSelectedKeywordStats
   } = useMarketingTool();
   
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -79,6 +83,7 @@ const KeywordStep: React.FC<KeywordStepProps> = () => {
   });
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
   
   // Function to handle sorting
   const requestSort = (key: keyof Keyword) => {
@@ -208,6 +213,88 @@ const KeywordStep: React.FC<KeywordStepProps> = () => {
     setCurrentStep(6);
   };
 
+  const handleOptimizeKeywords = async (apiKey: string) => {
+    if (keywords.length === 0) {
+      toast.error('No keywords to optimize');
+      return;
+    }
+
+    try {
+      const optimizedStats = await optimizeKeywords(keywords, apiKey);
+      setKeywordStats(optimizedStats);
+      toast.success('Keywords optimized successfully!');
+    } catch (error) {
+      console.error('Failed to optimize keywords:', error);
+      toast.error('Failed to optimize keywords');
+    }
+  };
+
+  const handleKeywordClick = async (keyword: Keyword) => {
+    setIsLoadingStats(true);
+    setSelectedKeywordStats(null);
+
+    try {
+      // Check if we already have stats for this keyword
+      const existingStat = keywordStats.find(stat => stat.term === keyword.term);
+      
+      if (existingStat) {
+        setSelectedKeywordStats(existingStat);
+      } else {
+        // If not, fetch new stats
+        const apiKey = localStorage.getItem('google_keyword_api_key');
+        if (!apiKey) {
+          toast.error('Please set your Google Keyword API key first');
+          setIsLoadingStats(false);
+          return;
+        }
+        
+        const stats = await fetchKeywordStats(keyword, apiKey);
+        setKeywordStats(prevStats => [...prevStats, stats]);
+        setSelectedKeywordStats(stats);
+      }
+    } catch (error) {
+      console.error('Failed to fetch keyword stats:', error);
+      toast.error('Failed to fetch keyword data');
+    } finally {
+      setIsLoadingStats(false);
+    }
+  };
+
+  const handleGenerateMoreSynonyms = async () => {
+    if (!selectedKeywordStats) return;
+    
+    try {
+      const apiKey = localStorage.getItem('google_keyword_api_key');
+      if (!apiKey) {
+        toast.error('Please set your Google Keyword API key first');
+        return;
+      }
+      
+      const newSynonyms = await generateMoreSynonyms(selectedKeywordStats.term, apiKey);
+      
+      // Update the selected keyword stats with new synonyms
+      const updatedStats = {
+        ...selectedKeywordStats,
+        synonyms: [...new Set([...selectedKeywordStats.synonyms, ...newSynonyms])]
+      };
+      
+      // Update the keyword stats array
+      setKeywordStats(prevStats => 
+        prevStats.map(stat => 
+          stat.id === selectedKeywordStats.id ? updatedStats : stat
+        )
+      );
+      
+      // Update the selected stats
+      setSelectedKeywordStats(updatedStats);
+      
+      toast.success('Generated new synonyms');
+    } catch (error) {
+      console.error('Failed to generate synonyms:', error);
+      toast.error('Failed to generate synonyms');
+    }
+  };
+
   return (
     <div className="container py-8 animate-fade-in">
       <h1 className="text-3xl font-bold text-center mb-2">Keyword Research</h1>
@@ -250,6 +337,14 @@ const KeywordStep: React.FC<KeywordStepProps> = () => {
         </Card>
       ) : (
         <>
+          {/* Keyword Data Visualizer - show when a keyword is selected */}
+          <KeywordDataVisualizer 
+            keywordStats={selectedKeywordStats}
+            isLoading={isLoadingStats}
+            onGenerateSynonyms={handleGenerateMoreSynonyms}
+            onClose={() => setSelectedKeywordStats(null)}
+          />
+          
           <Card className="mb-8">
             <CardHeader>
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -306,6 +401,9 @@ const KeywordStep: React.FC<KeywordStepProps> = () => {
               </div>
             </CardHeader>
             <CardContent>
+              <div className="mb-4">
+                <KeywordOptimizer onOptimize={handleOptimizeKeywords} />
+              </div>
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
@@ -332,7 +430,11 @@ const KeywordStep: React.FC<KeywordStepProps> = () => {
                   </TableHeader>
                   <TableBody>
                     {sortedKeywords.map((keyword) => (
-                      <TableRow key={keyword.id} className={`${keyword.isCustomAdded ? "bg-marketing-50/30" : ""}`}>
+                      <TableRow 
+                        key={keyword.id} 
+                        className={`${keyword.isCustomAdded ? "bg-marketing-50/30" : ""} cursor-pointer hover:bg-gray-100`}
+                        onClick={() => handleKeywordClick(keyword)}
+                      >
                         <TableCell className="font-medium">{keyword.term}</TableCell>
                         <TableCell>{keyword.searchVolume}</TableCell>
                         <TableCell>
