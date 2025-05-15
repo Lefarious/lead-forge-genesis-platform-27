@@ -9,8 +9,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { X, Plus } from 'lucide-react';
 
+/**
+ * BusinessInfoStep Component
+ * 
+ * This component allows users to input and manage basic information about their business,
+ * including name, industry, description, main problem solved, and products/services.
+ */
 const BusinessInfoStep: React.FC = () => {
   const { business, setBusinessInfo, setCurrentStep } = useMarketingTool();
+  
+  // Form state management
   const [formData, setFormData] = useState({
     name: business.name,
     industry: business.industry,
@@ -18,10 +26,13 @@ const BusinessInfoStep: React.FC = () => {
     mainProblem: business.mainProblem || '',
   });
   
+  // Products state management
   const [products, setProducts] = useState<string[]>(business.products || []);
   const [newProduct, setNewProduct] = useState('');
 
-  // Generate initial products when description changes
+  /**
+   * Generate initial products when description changes and no products exist
+   */
   useEffect(() => {
     // Only generate initial products if they don't exist and we have a description
     if (formData.description && products.length === 0) {
@@ -29,11 +40,17 @@ const BusinessInfoStep: React.FC = () => {
     }
   }, [formData.description]);
 
+  /**
+   * Handle input changes for form fields
+   */
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  /**
+   * Generate product suggestions based on business description and industry
+   */
   const generateProductSuggestions = () => {
     if (!formData.description) {
       toast.error('Please enter a business description first');
@@ -74,6 +91,9 @@ const BusinessInfoStep: React.FC = () => {
     toast.success('Generated product suggestions based on your business description');
   };
 
+  /**
+   * Add a new product to the products list
+   */
   const addProduct = () => {
     if (!newProduct.trim()) {
       toast.error('Please enter a product name');
@@ -90,6 +110,10 @@ const BusinessInfoStep: React.FC = () => {
     toast.success('Product added successfully');
   };
 
+  /**
+   * Remove a product from the products list
+   * @param index The index of the product to remove
+   */
   const removeProduct = (index: number) => {
     const updatedProducts = [...products];
     updatedProducts.splice(index, 1);
@@ -97,6 +121,9 @@ const BusinessInfoStep: React.FC = () => {
     toast.success('Product removed');
   };
 
+  /**
+   * Handle form submission
+   */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -143,6 +170,7 @@ const BusinessInfoStep: React.FC = () => {
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
+            {/* Business name and industry inputs */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Business Name *</Label>
@@ -168,6 +196,7 @@ const BusinessInfoStep: React.FC = () => {
               </div>
             </div>
 
+            {/* Business description textarea */}
             <div className="space-y-2">
               <Label htmlFor="description">Business Description *</Label>
               <Textarea
@@ -181,6 +210,7 @@ const BusinessInfoStep: React.FC = () => {
               />
             </div>
 
+            {/* Main problem textarea */}
             <div className="space-y-2">
               <Label htmlFor="mainProblem">Main Problem You Solve</Label>
               <Textarea
@@ -193,6 +223,7 @@ const BusinessInfoStep: React.FC = () => {
               />
             </div>
             
+            {/* Products/Services section */}
             <div className="space-y-4 pt-4 border-t">
               <div className="flex justify-between items-center">
                 <Label htmlFor="products" className="text-lg font-medium">Products/Services *</Label>
@@ -207,6 +238,7 @@ const BusinessInfoStep: React.FC = () => {
                 </Button>
               </div>
               
+              {/* Add new product input */}
               <div className="flex gap-2">
                 <Input
                   id="newProduct"
@@ -225,6 +257,7 @@ const BusinessInfoStep: React.FC = () => {
                 </Button>
               </div>
               
+              {/* Product list */}
               {products.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
                   {products.map((product, index) => (
@@ -245,6 +278,7 @@ const BusinessInfoStep: React.FC = () => {
                 </div>
               )}
               
+              {/* Empty state for products */}
               {products.length === 0 && (
                 <p className="text-sm text-muted-foreground">No products added yet. Add some products or generate suggestions based on your business description.</p>
               )}

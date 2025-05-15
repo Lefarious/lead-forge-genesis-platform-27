@@ -5,6 +5,12 @@ import { Check } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Checkbox Component
+ * 
+ * A customizable checkbox component built on top of Radix UI's Checkbox primitive
+ * Displays a checkmark icon when checked and supports all standard checkbox functionality
+ */
 const Checkbox = React.forwardRef<
   React.ElementRef<typeof CheckboxPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>

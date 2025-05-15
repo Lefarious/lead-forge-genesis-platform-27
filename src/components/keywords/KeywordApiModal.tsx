@@ -11,10 +11,24 @@ interface KeywordApiModalProps {
   onSave: (apiKey: string) => void;
 }
 
+/**
+ * KeywordApiModal Component
+ * 
+ * A modal dialog for entering and saving a Google Keyword Planner API key
+ * The API key is used for keyword optimization features
+ * 
+ * @param isOpen - Whether the modal is currently displayed
+ * @param onClose - Function to call when the modal is closed
+ * @param onSave - Function to call with the API key when it's saved
+ */
 const KeywordApiModal: React.FC<KeywordApiModalProps> = ({ isOpen, onClose, onSave }) => {
   const [apiKey, setApiKey] = useState('');
   const [isValidating, setIsValidating] = useState(false);
 
+  /**
+   * Handle saving the API key
+   * Performs basic validation before calling the onSave callback
+   */
   const handleSave = async () => {
     if (!apiKey.trim()) {
       return;
