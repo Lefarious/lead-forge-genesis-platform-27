@@ -1,4 +1,3 @@
-
 export const generateGeographies = async (business: any, existingGeographies: any[] = []): Promise<any[]> => {
   try {
     const apiKey = localStorage.getItem('openai_api_key');
@@ -258,6 +257,208 @@ export const generateICPs = async (
     }));
   } catch (error) {
     console.error('ICP generation error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Generate Unique Selling Points (USPs) based on business information and ICPs
+ * @param business Business information object
+ * @param icps Array of Ideal Customer Profiles
+ * @param existingUSPs Optional array of existing USPs to avoid duplicates
+ * @returns Promise with array of generated USPs
+ */
+export const generateUSPs = async (
+  business: any,
+  icps: any[],
+  existingUSPs: any[] = []
+): Promise<any[]> => {
+  try {
+    const apiKey = localStorage.getItem('openai_api_key');
+    if (!apiKey) {
+      throw new Error('API key not found');
+    }
+
+    // Extract existing USP titles to avoid duplicates
+    const existingTitles = existingUSPs.map(usp => usp.title.toLowerCase());
+    
+    // Create prompts from data
+    const businessPrompt = `Business Name: ${business.name || 'N/A'}\nIndustry: ${business.industry || 'N/A'}\nDescription: ${business.description || 'N/A'}\nProblem: ${business.problem || 'N/A'}`;
+    
+    const icpPrompt = icps.map(icp => 
+      `ICP: ${icp.title}\nDescription: ${icp.description}\nPain Points: ${icp.painPoints.join(', ')}\nGoals: ${icp.goals.join(', ')}`
+    ).join('\n\n');
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `You are an expert marketer tasked with identifying unique selling points (USPs) for a business.
+            Based on the provided business information and ICPs, create 3-4 distinct and compelling USPs.
+            For each USP, provide:
+            - Title (a short, compelling phrase)
+            - Description (brief explanation of this USP)
+            - Target ICP (which ICP this USP most appeals to)
+            - Value Proposition (how this USP specifically addresses the pain points or goals of the target ICP)
+            If existing USPs are provided, ensure your new USPs are distinct from them.
+            Respond in JSON format only with an array of USP objects.`
+          },
+          {
+            role: 'user',
+            content: `${businessPrompt}\n\n${icpPrompt}${existingTitles.length > 0 ? `\n\nExisting USP Titles (do not duplicate): ${existingTitles.join(', ')}` : ''}`
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 2000
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+    }
+
+    const responseData = await response.json();
+    console.log('USP generation response:', responseData);
+
+    const contentString = responseData.choices[0].message.content;
+    const parsedContent = JSON.parse(contentString);
+    
+    // Ensure proper array format
+    let usps = Array.isArray(parsedContent) ? parsedContent : [parsedContent];
+    
+    // Filter out USPs with titles that already exist
+    if (existingTitles.length > 0) {
+      usps = usps.filter(usp => 
+        !existingTitles.includes((usp.title || '').toLowerCase())
+      );
+    }
+
+    // Format and return the USPs with IDs
+    return usps.map((usp: any, index: number) => ({
+      id: `gen-usp-${Date.now()}-${index}`,
+      title: usp.title,
+      description: usp.description,
+      targetICP: usp.targetICP || usp.target_icp || usp.target,
+      valueProposition: usp.valueProposition || usp.value_proposition,
+      isCustomAdded: false
+    }));
+  } catch (error) {
+    console.error('USP generation error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Generate keywords based on business information, ICPs, USPs, and optionally geographies
+ * @param business Business information object
+ * @param icps Array of Ideal Customer Profiles
+ * @param usps Array of Unique Selling Points
+ * @param existingKeywords Optional array of existing keywords to avoid duplicates
+ * @param geographies Optional array of target geographies
+ * @returns Promise with array of generated keywords
+ */
+export const generateKeywords = async (
+  business: any,
+  icps: any[],
+  usps: any[] = [],
+  existingKeywords: any[] = [],
+  geographies: any[] = []
+): Promise<any[]> => {
+  try {
+    const apiKey = localStorage.getItem('openai_api_key');
+    if (!apiKey) {
+      throw new Error('API key not found');
+    }
+
+    // Extract existing keyword terms to avoid duplicates
+    const existingTerms = existingKeywords.map(keyword => keyword.term.toLowerCase());
+    
+    // Create prompts from data
+    const businessPrompt = `Business Name: ${business.name || 'N/A'}\nIndustry: ${business.industry || 'N/A'}\nDescription: ${business.description || 'N/A'}\nProblem: ${business.problem || 'N/A'}`;
+    
+    const icpPrompt = icps.map(icp => 
+      `ICP: ${icp.title}\nDescription: ${icp.description}\nPain Points: ${icp.painPoints.join(', ')}\nGoals: ${icp.goals.join(', ')}`
+    ).join('\n\n');
+    
+    const uspPrompt = usps.length > 0 
+      ? `USPs: ${usps.map(usp => `${usp.title} - ${usp.description}`).join('\n')}`
+      : '';
+    
+    const geoPrompt = geographies.length > 0
+      ? `Target Geographies: ${geographies.map(geo => geo.region).join(', ')}`
+      : '';
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `You are an expert SEO strategist tasked with identifying valuable keywords for a business.
+            Based on the provided business information, ICPs, USPs, and geographies, create 8-10 high-value keywords.
+            For each keyword, provide:
+            - Term (the actual keyword or phrase)
+            - Search Volume (estimated monthly searches, e.g., "5,400/mo" or "Low/Medium/High")
+            - Difficulty (competition level: Low, Medium-Low, Medium, Medium-High, or High)
+            - Relevance (how relevant this keyword is to the business: Low, Medium, or High)
+            - Related ICP (which ICP would most likely use this search term)
+            If existing keywords are provided, ensure your new keywords are distinct from them.
+            Respond in JSON format only with an array of keyword objects.`
+          },
+          {
+            role: 'user',
+            content: `${businessPrompt}\n\n${icpPrompt}\n\n${uspPrompt}\n\n${geoPrompt}${existingTerms.length > 0 ? `\n\nExisting Keyword Terms (do not duplicate): ${existingTerms.join(', ')}` : ''}`
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 2000
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+    }
+
+    const responseData = await response.json();
+    console.log('Keyword generation response:', responseData);
+
+    const contentString = responseData.choices[0].message.content;
+    const parsedContent = JSON.parse(contentString);
+    
+    // Ensure proper array format
+    let keywords = Array.isArray(parsedContent) ? parsedContent : [parsedContent];
+    
+    // Filter out keywords that already exist
+    if (existingTerms.length > 0) {
+      keywords = keywords.filter(keyword => 
+        !existingTerms.includes((keyword.term || '').toLowerCase())
+      );
+    }
+
+    // Format and return the keywords with IDs
+    return keywords.map((keyword: any, index: number) => ({
+      id: `gen-keyword-${Date.now()}-${index}`,
+      term: keyword.term,
+      searchVolume: keyword.searchVolume || keyword.search_volume || keyword.volume,
+      difficulty: keyword.difficulty,
+      relevance: keyword.relevance,
+      relatedICP: keyword.relatedICP || keyword.related_icp || keyword.icp,
+      isCustomAdded: false
+    }));
+  } catch (error) {
+    console.error('Keyword generation error:', error);
     throw error;
   }
 };
