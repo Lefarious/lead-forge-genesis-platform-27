@@ -41,11 +41,11 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className={cn("min-h-screen flex flex-col", 
+    <div className={cn("min-h-screen flex flex-col w-full", 
       isDarkMode ? "bg-gradient-to-br from-black to-gray-900" : "bg-gradient-to-br from-slate-50 to-gray-100")}>
-      <header className={cn("border-b py-4", 
+      <header className={cn("border-b py-4 w-full", 
         isDarkMode ? "bg-black border-gray-800" : "bg-white border-gray-100")}>
-        <div className="container flex justify-between items-center">
+        <div className="container flex justify-between items-center w-full max-w-full px-4 md:px-6 lg:px-8">
           <div className="flex items-center">
             <div className={cn("font-bold text-2xl bg-clip-text text-transparent", 
               "bg-gradient-to-r from-purple-400 to-purple-600")}>
@@ -98,12 +98,12 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           </Button>
         </div>
       </header>
-      <main className="flex-1">
+      <main className="flex-1 w-full">
         {children}
       </main>
-      <footer className={cn("border-t py-4", 
+      <footer className={cn("border-t py-4 w-full", 
         isDarkMode ? "bg-black border-gray-800" : "bg-white border-gray-100")}>
-        <div className={cn("container text-center text-sm", 
+        <div className={cn("container text-center text-sm w-full max-w-full px-4", 
           isDarkMode ? "text-gray-400" : "text-gray-500")}>
           &copy; {new Date().getFullYear()} Marketing AI. All rights reserved.
         </div>
