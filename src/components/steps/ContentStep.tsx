@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import ApiKeyInput from '@/components/common/ApiKeyInput';
+import { generateContentIdeas } from '@/utils/llmUtils';
 
 interface ContentStepProps {
   autoGenerate?: boolean;
@@ -33,53 +36,9 @@ const contentTypeIcon = (type: string) => {
   }
 };
 
-const mockGenerateContent = (business: any, icps: any[], keywords: any[]): Promise<ContentIdea[]> => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      resolve([
-        {
-          id: '1',
-          title: 'The Future of Workflow Automation: AI-Driven Approaches for Enterprise',
-          type: 'White Paper',
-          targetICP: 'Enterprise IT Decision Makers',
-          targetKeywords: ['AI workflow automation', 'enterprise workflow management'],
-          outline: [
-            'Introduction to AI in workflow automation',
-            'Current challenges in enterprise workflows',
-            'How AI transforms automation capabilities',
-            'Case studies: 3 enterprises that increased efficiency by 70%+',
-            'Implementation roadmap for enterprise IT leaders',
-            'ROI calculation methodology'
-          ],
-          estimatedValue: 'High - Lead generation for enterprise clients',
-          published: false
-        },
-        {
-          id: '2',
-          title: '5 Ways No-Code Automation is Transforming Startup Operations',
-          type: 'Blog Post',
-          targetICP: 'Startup Founders',
-          targetKeywords: ['no-code automation tool', 'startup automation tools'],
-          outline: [
-            'The startup time crunch: Why automation matters',
-            '1. Customer onboarding automation',
-            '2. Marketing and sales process automation',
-            '3. Financial reporting automation',
-            '4. HR and recruitment automation',
-            '5. Customer support automation',
-            'How to start with limited resources'
-          ],
-          estimatedValue: 'Medium - SEO and awareness building',
-          published: false
-        }
-      ]);
-    }, 2000);
-  });
-};
-
 const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
   const { 
-    business, icps, keywords, contentIdeas, setContentIdeas, addCustomContentIdea,
+    business, icps, keywords, geographies, usps, contentIdeas, setContentIdeas, addCustomContentIdea,
     publishContent, setCurrentStep, isGenerating, setIsGenerating
   } = useMarketingTool();
   const [selectedTab, setSelectedTab] = useState('all');
@@ -102,12 +61,27 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
   const [currentKeyword, setCurrentKeyword] = useState('');
 
   const handleGenerateContent = async () => {
+    if (!localStorage.getItem('openai_api_key')) {
+      toast.error('Please set your OpenAI API key first');
+      return;
+    }
+
     setIsGenerating(true);
     try {
-      const generatedContent = await mockGenerateContent(business, icps, keywords);
+      console.log('Generating content ideas using:', {
+        business,
+        icps,
+        keywords,
+        usps,
+        geographies,
+        existingIdeas: contentIdeas
+      });
+      
+      const generatedContent = await generateContentIdeas(business, icps, keywords, usps, geographies, contentIdeas);
       setContentIdeas([...contentIdeas, ...generatedContent]); // Append new content ideas
       toast.success('Content ideas generated!');
     } catch (error) {
+      console.error('Content generation error:', error);
       toast.error('Failed to generate content ideas');
     } finally {
       setIsGenerating(false);
@@ -218,7 +192,7 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
     <div className="container py-8 animate-fade-in">
       <h1 className="text-3xl font-bold text-center mb-2">Content Ideas</h1>
       <p className="text-center text-gray-600 mb-8">
-        Generate high-value content ideas based on your ICPs and keywords
+        Generate high-value content ideas based on your ICPs, USPs, geographies and keywords
       </p>
 
       {contentIdeas.length === 0 ? (
@@ -226,7 +200,7 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
           <CardHeader>
             <CardTitle>Generate Content Ideas</CardTitle>
             <CardDescription>
-              We'll analyze your business, ICPs, and keywords to suggest impactful content
+              We'll analyze your business, ICPs, USPs, geographies, and keywords to suggest impactful content
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -241,16 +215,19 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
               >
                 Back to Keywords
               </Button>
-              <Button 
-                onClick={handleGenerateContent} 
-                variant="default"
-                className="bg-marketing-600 hover:bg-marketing-700 text-white transition-all duration-300 flex items-center gap-2 group"
-                disabled={isGenerating}
-              >
-                {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Generate Content Ideas
-                <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-              </Button>
+              <div className="flex items-center gap-2">
+                <ApiKeyInput />
+                <Button 
+                  onClick={handleGenerateContent} 
+                  variant="default"
+                  className="bg-marketing-600 hover:bg-marketing-700 text-white transition-all duration-300 flex items-center gap-2 group"
+                  disabled={isGenerating}
+                >
+                  {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Generate Content Ideas
+                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -313,16 +290,15 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
             </TabsContent>
           </Tabs>
           
-          <div className="flex justify-between items-center mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  className="flex gap-2 items-center hover:bg-gray-100 transition-all duration-300 group"
-                >
-                  <Plus className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                  Add Custom Content Idea
-                </Button>
+                <Card className="border-dashed border-2 border-gray-300 hover:border-marketing-400 cursor-pointer flex flex-col items-center justify-center min-h-[200px] transition-all duration-300">
+                  <CardContent className="flex flex-col items-center justify-center p-6">
+                    <Plus className="h-12 w-12 text-gray-400 mb-4" />
+                    <p className="text-gray-600 font-medium">Add Custom Content Idea</p>
+                  </CardContent>
+                </Card>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[650px]">
                 <DialogHeader>
@@ -487,18 +463,20 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-            <Button 
-              onClick={handleGenerateContent} 
-              className="bg-marketing-600 hover:bg-marketing-700 text-white transition-all duration-300 flex items-center gap-2 group"
-              disabled={isGenerating}
-            >
-              {isGenerating ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4 group-hover:rotate-180 transition-transform duration-500" />
-              )}
-              Generate More Content Ideas
-            </Button>
+            
+            <Card className="border-dashed border-2 border-gray-300 hover:border-marketing-400 cursor-pointer flex flex-col items-center justify-center min-h-[200px] transition-all duration-300">
+              <CardContent className="flex flex-col items-center justify-center p-6" onClick={handleGenerateContent}>
+                {isGenerating ? (
+                  <Loader2 className="h-12 w-12 text-gray-400 mb-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-12 w-12 text-gray-400 mb-4 hover:rotate-180 transition-transform duration-500" />
+                )}
+                <div className="flex items-center gap-2">
+                  <ApiKeyInput />
+                </div>
+                <p className="text-gray-600 font-medium mt-2">Generate More Content Ideas</p>
+              </CardContent>
+            </Card>
           </div>
           
           <div className="flex justify-between">
