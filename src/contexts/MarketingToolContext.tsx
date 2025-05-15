@@ -6,8 +6,14 @@ import { KeywordStats } from '@/components/keywords/KeywordDataVisualizer';
 export interface BusinessInfo {
   name: string;
   industry: string;
-  missionStatement: string;
-  companyDescription: string;
+  description: string;  // Added this property
+  mainProblem: string;  // Added this property
+  products: string[];   // Added this property
+  targetAudience: string;
+  mainSolution: string;
+  existingCustomers: string;
+  missionStatement?: string;
+  companyDescription?: string;
 }
 
 export interface ICP {
@@ -38,6 +44,14 @@ export interface Geography {
   competitionLevel: string;
   targetICPs: string[];
   isCustomAdded?: boolean;
+  // Add missing properties
+  region: string;
+  growthRate: string;
+  recommendation: string;
+  whyTarget?: string;
+  profitabilityRating?: string;
+  pricingPower?: string;
+  brandPersonality?: string;
 }
 
 export interface ContentIdea {
@@ -50,6 +64,10 @@ export interface ContentIdea {
   published?: boolean;
   publishLink?: string;
   isCustomAdded?: boolean;
+  // Add missing properties
+  targetKeywords: string[];
+  outline: string[];
+  estimatedValue: string;
 }
 
 export interface PublishedContent {
@@ -91,6 +109,12 @@ export interface Keyword {
 const initialBusinessInfo: BusinessInfo = {
   name: '',
   industry: '',
+  description: '',
+  mainProblem: '',
+  products: [],
+  targetAudience: '',
+  mainSolution: '',
+  existingCustomers: '',
   missionStatement: '',
   companyDescription: '',
 };
@@ -158,7 +182,7 @@ export interface MarketingToolContextType {
   addCustomUSP: (usp: Omit<USP, 'id'>) => void;
   addCustomGeography: (geography: Omit<Geography, 'id'>) => void;
   addCustomContentIdea: (contentIdea: Omit<ContentIdea, 'id'>) => void;
-  publishContent: (id: string, publishLink: string) => void;
+  publishContent: (id: string, publishLink?: string) => void;
   landingPage: LandingPage;
   updateLandingPage: (updates: Partial<LandingPage>) => void;
 }
@@ -223,7 +247,7 @@ export const MarketingToolProvider: React.FC<{ children: React.ReactNode }> = ({
     setContentIdeas([...contentIdeas, newContentIdea]);
   };
 
-  const publishContent = (id: string, publishLink: string) => {
+  const publishContent = (id: string, publishLink: string = '') => {
     setContentIdeas(contentIdeas.map(content => 
       content.id === id ? { ...content, published: true, publishLink } : content
     ));

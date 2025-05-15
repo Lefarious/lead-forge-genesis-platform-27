@@ -14,8 +14,8 @@ const BusinessInfoStep: React.FC = () => {
   const [formData, setFormData] = useState({
     name: business.name,
     industry: business.industry,
-    description: business.description,
-    mainProblem: business.mainProblem,
+    description: business.description || '',
+    mainProblem: business.mainProblem || '',
   });
   
   const [products, setProducts] = useState<string[]>(business.products || []);
