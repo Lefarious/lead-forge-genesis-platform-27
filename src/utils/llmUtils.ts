@@ -260,8 +260,8 @@ export const generateKeywords = async (
   business: any, 
   icps: any[] = [], 
   usps: any[] = [], 
-  geographies: any[] = [],
-  existingKeywords: any[] = []
+  existingKeywords: any[] = [],
+  geographies: any[] = []
 ): Promise<any[]> => {
   try {
     const apiKey = localStorage.getItem('openai_api_key');
@@ -272,25 +272,47 @@ export const generateKeywords = async (
     // Extract existing terms to avoid duplicates
     const existingTerms = existingKeywords.map(kw => kw.term.toLowerCase());
     
-    // Include ICPs in the prompt
-    const icpPrompt = icps.length > 0 
-      ? `ICPs: ${icps.map(icp => `${icp.title} - ${icp.description}`).join('\n')}` 
-      : 'No ICPs provided.';
+    // Prepare all business data as key-value pairs
+    const businessData = {
+      name: business.name,
+      industry: business.industry,
+      description: business.description,
+      mainProblem: business.mainProblem || 'Not specified',
+      mainSolution: business.mainSolution || 'Not specified',
+      targetAudience: business.targetAudience || 'Not specified',
+      existingCustomers: business.existingCustomers || 'Not specified',
+      products: business.products || []
+    };
     
-    // Include USPs in the prompt
-    const uspPrompt = usps.length > 0 
-      ? `USPs: ${usps.map(usp => `${usp.title} - ${usp.description}`).join('\n')}` 
-      : 'No USPs provided.';
+    // Prepare ICP data
+    const icpData = icps.map(icp => ({
+      title: icp.title,
+      description: icp.description,
+      painPoints: Array.isArray(icp.painPoints) ? icp.painPoints : [icp.painPoints],
+      goals: Array.isArray(icp.goals) ? icp.goals : [icp.goals],
+      demographics: typeof icp.demographics === 'string' ? icp.demographics : JSON.stringify(icp.demographics),
+      blueOceanScore: icp.blueOceanScore
+    }));
     
-    // Include Geographies in the prompt
-    const geoPrompt = geographies.length > 0
-      ? `Target Geographies: ${geographies.map(geo => geo.region).join(', ')}` 
-      : 'No target geographies provided.';
+    // Prepare USP data
+    const uspData = usps.map(usp => ({
+      title: usp.title,
+      description: usp.description,
+      targetICP: usp.targetICP,
+      valueProposition: usp.valueProposition
+    }));
     
-    // Include products in the prompt
-    const productsPrompt = business.products && business.products.length > 0 
-      ? `Products/Services: ${business.products.join(', ')}` 
-      : '';
+    // Prepare geography data
+    const geoData = geographies.map(geo => ({
+      region: geo.region,
+      marketSize: geo.marketSize,
+      growthRate: geo.growthRate,
+      competitionLevel: geo.competitionLevel,
+      whyTarget: geo.whyTarget,
+      pricingPower: geo.pricingPower,
+      profitabilityRating: geo.profitabilityRating,
+      brandPersonality: geo.brandPersonality
+    }));
     
     // Include existing keywords to avoid duplication
     const existingKeywordPrompt = existingTerms.length > 0
@@ -309,36 +331,34 @@ export const generateKeywords = async (
           {
             role: 'system',
             content: `You are an expert SEO strategist helping a business identify valuable keywords.
-            Based on the business information, ICPs, USPs, and target geographies provided, generate 5-7 highly relevant keywords.
+            Based on all the provided business data, generate EXACTLY 15 highly relevant keywords.
             For each keyword provide:
             - Term (the actual search term or phrase)
             - Search Volume (estimated monthly searches, e.g., "1,000-5,000")
-            - Difficulty (Low, Medium, High)
+            - Difficulty (Low, Medium-Low, Medium, Medium-High, High)
             - Relevance (Low, Medium, High)
             - Related ICP (which ICP from the provided list this keyword primarily targets)
+            - Competitor Usage (Low, Medium, High - how frequently competitors are using this keyword)
+            
             Ensure keywords are varied, specific, and have commercial intent where appropriate.
+            Include some long-tail keywords with lower competition.
+            Generate keywords that cover all geographic regions and ICPs, but prioritize those with higher profitability.
             DO NOT INCLUDE ANY KEYWORDS THAT ARE ALREADY IN THE EXISTING LIST.
             Respond in JSON format only.`
           },
           {
             role: 'user',
-            content: `Business Name: ${business.name}
-            Industry: ${business.industry}
-            Description: ${business.description}
-            Main Problem: ${business.mainProblem || 'Not specified'}
-            ${productsPrompt}
-            
-            ${icpPrompt}
-            
-            ${uspPrompt}
-            
-            ${geoPrompt}
-            
-            ${existingKeywordPrompt}`
+            content: JSON.stringify({
+              business: businessData,
+              icps: icpData,
+              usps: uspData,
+              geographies: geoData,
+              existingKeywords: existingKeywordPrompt
+            })
           }
         ],
         temperature: 0.7,
-        max_tokens: 1200
+        max_tokens: 2000
       })
     });
 
@@ -367,6 +387,7 @@ export const generateKeywords = async (
       difficulty: keyword.difficulty || keyword.Difficulty,
       relevance: keyword.relevance || keyword.Relevance,
       relatedICP: keyword.relatedICP || keyword['Related ICP'],
+      competitorUsage: keyword.competitorUsage || keyword['Competitor Usage'],
       isCustomAdded: false
     }));
   } catch (error) {

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type Business = {
@@ -55,6 +54,7 @@ export type Keyword = {
   difficulty: string;
   relevance: string;
   relatedICP: string;
+  competitorUsage?: string;
   isCustomAdded?: boolean;
 };
 

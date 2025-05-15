@@ -1,10 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Loader2, Search, Plus, RefreshCw } from 'lucide-react';
+import { Loader2, Search, Plus, RefreshCw, SortAsc, SortDesc, List } from 'lucide-react';
 import { Keyword } from '@/contexts/MarketingToolContext';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -12,6 +12,27 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { generateKeywords } from '@/utils/llmUtils';
 import ApiKeyInput from '@/components/common/ApiKeyInput';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface KeywordStepProps {}
 
@@ -24,6 +45,12 @@ const getDifficultyColor = (difficulty: string) => {
 const getRelevanceColor = (relevance: string) => {
   if (relevance.toLowerCase() === 'high') return 'bg-green-100 text-green-800';
   if (relevance.toLowerCase() === 'low') return 'bg-gray-100 text-gray-800';
+  return 'bg-blue-100 text-blue-800';
+};
+
+const getCompetitorUsageColor = (usage: string) => {
+  if (usage?.toLowerCase() === 'high') return 'bg-red-100 text-red-800';
+  if (usage?.toLowerCase() === 'low') return 'bg-green-100 text-green-800';
   return 'bg-blue-100 text-blue-800';
 };
 
@@ -40,7 +67,79 @@ const KeywordStep: React.FC<KeywordStepProps> = () => {
     difficulty: 'Medium',
     relevance: 'Medium',
     relatedICP: icps.length > 0 ? icps[0].title : '',
+    competitorUsage: 'Medium'
   });
+  
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof Keyword,
+    direction: 'asc' | 'desc'
+  }>({
+    key: 'term',
+    direction: 'asc'
+  });
+
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Function to handle sorting
+  const requestSort = (key: keyof Keyword) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+  
+  // Apply sorting and filtering to keywords
+  const sortedKeywords = useMemo(() => {
+    // Filter keywords based on search term
+    const filteredKeywords = keywords.filter(keyword => 
+      keyword.term.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      keyword.relatedICP.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    
+    // Sort filtered keywords
+    return [...filteredKeywords].sort((a, b) => {
+      const aValue = String(a[sortConfig.key] || '').toLowerCase();
+      const bValue = String(b[sortConfig.key] || '').toLowerCase();
+      
+      // For numeric values like search volume
+      if (sortConfig.key === 'searchVolume') {
+        const aNum = parseInt(aValue.replace(/[^0-9]/g, '')) || 0;
+        const bNum = parseInt(bValue.replace(/[^0-9]/g, '')) || 0;
+        return sortConfig.direction === 'asc' ? aNum - bNum : bNum - aNum;
+      }
+      
+      // For string values
+      if (aValue < bValue) {
+        return sortConfig.direction === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return sortConfig.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  }, [keywords, sortConfig, searchTerm]);
+
+  // Get frequency of each ICP in keywords to determine opacity
+  const icpFrequency = useMemo(() => {
+    const frequency: Record<string, number> = {};
+    keywords.forEach(keyword => {
+      const icp = keyword.relatedICP;
+      frequency[icp] = (frequency[icp] || 0) + 1;
+    });
+    return frequency;
+  }, [keywords]);
+  
+  // Get max frequency for normalization
+  const maxFrequency = useMemo(() => {
+    return Math.max(...Object.values(icpFrequency), 1);
+  }, [icpFrequency]);
+  
+  // Calculate opacity based on frequency
+  const getIcpOpacity = (icp: string) => {
+    const frequency = icpFrequency[icp] || 0;
+    return Math.max(0.4, frequency / maxFrequency);
+  };
 
   const handleGenerateKeywords = async () => {
     if (!localStorage.getItem('openai_api_key')) {
@@ -50,7 +149,7 @@ const KeywordStep: React.FC<KeywordStepProps> = () => {
 
     setIsGenerating(true);
     try {
-      const generatedKeywords = await generateKeywords(business, icps, usps, []);
+      const generatedKeywords = await generateKeywords(business, icps, usps, [], geographies);
       setKeywords(generatedKeywords);
       toast.success('Keywords generated!');
     } catch (error) {
@@ -96,6 +195,7 @@ const KeywordStep: React.FC<KeywordStepProps> = () => {
       difficulty: 'Medium',
       relevance: 'Medium',
       relatedICP: icps.length > 0 ? icps[0].title : '',
+      competitorUsage: 'Medium'
     });
     toast.success('Custom keyword added successfully');
   };
@@ -125,7 +225,7 @@ const KeywordStep: React.FC<KeywordStepProps> = () => {
           </CardHeader>
           <CardContent>
             <p className="text-gray-600 mb-4">
-              Our AI will generate a list of keywords tailored to your business and target audience.
+              Our AI will generate a list of 15 keywords tailored to your business and target audience.
             </p>
             <div className="flex justify-between items-center">
               <Button 
@@ -152,46 +252,115 @@ const KeywordStep: React.FC<KeywordStepProps> = () => {
         <>
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <Search className="h-5 w-5 mr-2 text-marketing-600" />
-                Keywords for Your Content Strategy
-              </CardTitle>
-              <CardDescription>
-                Use these keywords in your content, website, and advertising to improve visibility
-              </CardDescription>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <CardTitle className="flex items-center">
+                    <Search className="h-5 w-5 mr-2 text-marketing-600" />
+                    Keywords for Your Content Strategy
+                  </CardTitle>
+                  <CardDescription>
+                    Use these keywords in your content, website, and advertising to improve visibility
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <Input 
+                    placeholder="Search keywords..." 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full sm:w-auto"
+                  />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="icon">
+                        <List className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => requestSort('term')}>
+                        Sort by Term {sortConfig.key === 'term' && 
+                          (sortConfig.direction === 'asc' ? <SortAsc className="ml-2 h-4 w-4" /> : <SortDesc className="ml-2 h-4 w-4" />)}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => requestSort('searchVolume')}>
+                        Sort by Search Volume {sortConfig.key === 'searchVolume' && 
+                          (sortConfig.direction === 'asc' ? <SortAsc className="ml-2 h-4 w-4" /> : <SortDesc className="ml-2 h-4 w-4" />)}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => requestSort('difficulty')}>
+                        Sort by Difficulty {sortConfig.key === 'difficulty' && 
+                          (sortConfig.direction === 'asc' ? <SortAsc className="ml-2 h-4 w-4" /> : <SortDesc className="ml-2 h-4 w-4" />)}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => requestSort('relevance')}>
+                        Sort by Relevance {sortConfig.key === 'relevance' && 
+                          (sortConfig.direction === 'asc' ? <SortAsc className="ml-2 h-4 w-4" /> : <SortDesc className="ml-2 h-4 w-4" />)}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => requestSort('relatedICP')}>
+                        Sort by ICP {sortConfig.key === 'relatedICP' && 
+                          (sortConfig.direction === 'asc' ? <SortAsc className="ml-2 h-4 w-4" /> : <SortDesc className="ml-2 h-4 w-4" />)}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => requestSort('competitorUsage')}>
+                        Sort by Competitor Usage {sortConfig.key === 'competitorUsage' && 
+                          (sortConfig.direction === 'asc' ? <SortAsc className="ml-2 h-4 w-4" /> : <SortDesc className="ml-2 h-4 w-4" />)}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Keyword</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Search Volume</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Difficulty</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Relevance</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Related ICP</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {keywords.map((keyword) => (
-                      <tr key={keyword.id} className={`border-b hover:bg-gray-50 ${keyword.isCustomAdded ? "bg-marketing-50/30" : ""}`}>
-                        <td className="py-3 px-4 font-medium">{keyword.term}</td>
-                        <td className="py-3 px-4 text-gray-600">{keyword.searchVolume}</td>
-                        <td className="py-3 px-4">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="cursor-pointer" onClick={() => requestSort('term')}>
+                        Keyword {sortConfig.key === 'term' && (sortConfig.direction === 'asc' ? <SortAsc className="inline h-4 w-4" /> : <SortDesc className="inline h-4 w-4" />)}
+                      </TableHead>
+                      <TableHead className="cursor-pointer" onClick={() => requestSort('searchVolume')}>
+                        Search Volume {sortConfig.key === 'searchVolume' && (sortConfig.direction === 'asc' ? <SortAsc className="inline h-4 w-4" /> : <SortDesc className="inline h-4 w-4" />)}
+                      </TableHead>
+                      <TableHead className="cursor-pointer" onClick={() => requestSort('difficulty')}>
+                        Difficulty {sortConfig.key === 'difficulty' && (sortConfig.direction === 'asc' ? <SortAsc className="inline h-4 w-4" /> : <SortDesc className="inline h-4 w-4" />)}
+                      </TableHead>
+                      <TableHead className="cursor-pointer" onClick={() => requestSort('relevance')}>
+                        Relevance {sortConfig.key === 'relevance' && (sortConfig.direction === 'asc' ? <SortAsc className="inline h-4 w-4" /> : <SortDesc className="inline h-4 w-4" />)}
+                      </TableHead>
+                      <TableHead className="cursor-pointer" onClick={() => requestSort('competitorUsage')}>
+                        Competitor Usage {sortConfig.key === 'competitorUsage' && (sortConfig.direction === 'asc' ? <SortAsc className="inline h-4 w-4" /> : <SortDesc className="inline h-4 w-4" />)}
+                      </TableHead>
+                      <TableHead className="cursor-pointer" onClick={() => requestSort('relatedICP')}>
+                        Related ICP {sortConfig.key === 'relatedICP' && (sortConfig.direction === 'asc' ? <SortAsc className="inline h-4 w-4" /> : <SortDesc className="inline h-4 w-4" />)}
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedKeywords.map((keyword) => (
+                      <TableRow key={keyword.id} className={`${keyword.isCustomAdded ? "bg-marketing-50/30" : ""}`}>
+                        <TableCell className="font-medium">{keyword.term}</TableCell>
+                        <TableCell>{keyword.searchVolume}</TableCell>
+                        <TableCell>
                           <Badge variant="outline" className={getDifficultyColor(keyword.difficulty)}>
                             {keyword.difficulty}
                           </Badge>
-                        </td>
-                        <td className="py-3 px-4">
+                        </TableCell>
+                        <TableCell>
                           <Badge variant="outline" className={getRelevanceColor(keyword.relevance)}>
                             {keyword.relevance}
                           </Badge>
-                        </td>
-                        <td className="py-3 px-4 text-gray-600">{keyword.relatedICP}</td>
-                      </tr>
+                        </TableCell>
+                        <TableCell>
+                          {keyword.competitorUsage && (
+                            <Badge variant="outline" className={getCompetitorUsageColor(keyword.competitorUsage)}>
+                              {keyword.competitorUsage}
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <span style={{ opacity: getIcpOpacity(keyword.relatedICP) }}>
+                            {keyword.relatedICP}
+                          </span>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             </CardContent>
           </Card>
@@ -278,48 +447,75 @@ const KeywordStep: React.FC<KeywordStepProps> = () => {
               <Label htmlFor="difficulty" className="text-right">
                 Difficulty
               </Label>
-              <select
-                id="difficulty"
+              <Select
                 value={newKeyword.difficulty}
-                onChange={(e) => setNewKeyword({ ...newKeyword, difficulty: e.target.value })}
-                className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                onValueChange={(value) => setNewKeyword({ ...newKeyword, difficulty: value })}
               >
-                <option value="Low">Low</option>
-                <option value="Medium-Low">Medium-Low</option>
-                <option value="Medium">Medium</option>
-                <option value="Medium-High">Medium-High</option>
-                <option value="High">High</option>
-              </select>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select difficulty" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Low">Low</SelectItem>
+                  <SelectItem value="Medium-Low">Medium-Low</SelectItem>
+                  <SelectItem value="Medium">Medium</SelectItem>
+                  <SelectItem value="Medium-High">Medium-High</SelectItem>
+                  <SelectItem value="High">High</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="relevance" className="text-right">
                 Relevance
               </Label>
-              <select
-                id="relevance"
+              <Select
                 value={newKeyword.relevance}
-                onChange={(e) => setNewKeyword({ ...newKeyword, relevance: e.target.value })}
-                className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                onValueChange={(value) => setNewKeyword({ ...newKeyword, relevance: value })}
               >
-                <option value="Low">Low</option>
-                <option value="Medium">Medium</option>
-                <option value="High">High</option>
-              </select>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select relevance" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Low">Low</SelectItem>
+                  <SelectItem value="Medium">Medium</SelectItem>
+                  <SelectItem value="High">High</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="competitorUsage" className="text-right">
+                Competitor Usage
+              </Label>
+              <Select
+                value={newKeyword.competitorUsage}
+                onValueChange={(value) => setNewKeyword({ ...newKeyword, competitorUsage: value })}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select competitor usage" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Low">Low</SelectItem>
+                  <SelectItem value="Medium">Medium</SelectItem>
+                  <SelectItem value="High">High</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="relatedICP" className="text-right">
                 Related ICP
               </Label>
-              <select
-                id="relatedICP"
+              <Select
                 value={newKeyword.relatedICP}
-                onChange={(e) => setNewKeyword({ ...newKeyword, relatedICP: e.target.value })}
-                className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                onValueChange={(value) => setNewKeyword({ ...newKeyword, relatedICP: value })}
               >
-                {icps.map((icp) => (
-                  <option key={icp.id} value={icp.title}>{icp.title}</option>
-                ))}
-              </select>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select related ICP" />
+                </SelectTrigger>
+                <SelectContent>
+                  {icps.map((icp) => (
+                    <SelectItem key={icp.id} value={icp.title}>{icp.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>
