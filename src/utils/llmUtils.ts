@@ -13,9 +13,8 @@ export const callOpenAI = async (messages: any[], options: {
   }
 
   const {
-    model = 'gpt-4o-mini',
-    temperature = 0.7,
-    maxTokens = 1200
+    model = 'gpt-4.1',
+    temperature = 0.7
   } = options;
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -28,7 +27,9 @@ export const callOpenAI = async (messages: any[], options: {
       model,
       messages,
       temperature,
-      max_tokens: maxTokens
+      response_format: {
+        'type': 'json_object'
+      }
     })
   });
 
