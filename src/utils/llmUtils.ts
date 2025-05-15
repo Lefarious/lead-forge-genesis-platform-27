@@ -118,7 +118,7 @@ export const generateICPs = async (business: any, existingICPs: any[] = []): Pro
             Ensure these are diverse, focused profiles that don't overlap too much with each other.
             Make sure none of the ICPs duplicate existing ones.
             ALWAYS provide complete demographic information, even if it needs to be generalized.
-            Respond in JSON format only.`
+            Respond in JSON format only with an array of ICPs.`
           },
           {
             role: 'user',
@@ -142,10 +142,32 @@ export const generateICPs = async (business: any, existingICPs: any[] = []): Pro
     console.log('ICP generation response:', responseData);
 
     const contentString = responseData.choices[0].message.content;
-    const parsedContent = JSON.parse(contentString);
     
-    // Ensure we have an array of ICPs
-    let icps = Array.isArray(parsedContent) ? parsedContent : [parsedContent];
+    // Remove any markdown formatting that might be in the response
+    const cleanedContentString = contentString.replace(/```json|```/g, '').trim();
+    
+    // Attempt to parse the cleaned JSON
+    let parsedContent;
+    try {
+      parsedContent = JSON.parse(cleanedContentString);
+    } catch (parseError) {
+      console.error('Error parsing JSON response:', parseError);
+      console.log('Raw content:', cleanedContentString);
+      throw new Error('Failed to parse API response as JSON');
+    }
+    
+    // Handle different response formats
+    let icps = [];
+    if (Array.isArray(parsedContent)) {
+      icps = parsedContent;
+    } else if (parsedContent.idealCustomerProfiles) {
+      icps = parsedContent.idealCustomerProfiles;
+    } else if (parsedContent.icps) {
+      icps = parsedContent.icps;
+    } else {
+      // If we can't find an array of ICPs, try to use the whole object as a single ICP
+      icps = [parsedContent];
+    }
     
     // Filter out any ICPs that duplicate existing ones
     icps = icps.filter(icp => !existingTitles.includes(icp.title.toLowerCase()));
