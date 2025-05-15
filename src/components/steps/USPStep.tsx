@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import CompetitiveAnalysis from '@/components/usps/CompetitiveAnalysis';
 
 interface USPStepProps {}
 
@@ -24,7 +24,6 @@ const USPStep: React.FC<USPStepProps> = () => {
     targetICP: icps.length > 0 ? icps[0].title : '',
     valueProposition: ''
   });
-  const [expandedUSP, setExpandedUSP] = useState<string | null>(null);
 
   const handleGenerateUSPs = async () => {
     if (!localStorage.getItem('openai_api_key')) {
@@ -132,7 +131,7 @@ const USPStep: React.FC<USPStepProps> = () => {
         </Card>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             {usps.map((usp) => (
               <Card key={usp.id} className={usp.isCustomAdded ? "border-marketing-300 bg-marketing-50/30" : ""}>
                 <CardHeader>
@@ -147,28 +146,6 @@ const USPStep: React.FC<USPStepProps> = () => {
                     <h4 className="font-medium text-sm mb-1 text-marketing-700">Value Proposition:</h4>
                     <p className="text-sm text-gray-700">{usp.valueProposition}</p>
                   </div>
-                  
-                  {expandedUSP === usp.id ? (
-                    <CompetitiveAnalysis business={business} usp={usp} />
-                  ) : (
-                    <Button 
-                      variant="ghost" 
-                      className="text-marketing-600 text-sm p-0 h-auto"
-                      onClick={() => setExpandedUSP(usp.id)}
-                    >
-                      Show market analysis
-                    </Button>
-                  )}
-                  
-                  {expandedUSP === usp.id && (
-                    <Button 
-                      variant="ghost" 
-                      className="text-gray-500 text-sm p-0 h-auto"
-                      onClick={() => setExpandedUSP(null)}
-                    >
-                      Hide market analysis
-                    </Button>
-                  )}
                 </CardContent>
               </Card>
             ))}

@@ -8,7 +8,7 @@ import { LandingPage } from '@/contexts/MarketingToolContext';
 import LandingPagePreview from '@/components/publish/LandingPagePreview';
 import LandingPageForm from '@/components/publish/LandingPageForm';
 import PublishedContentList from '@/components/publish/PublishedContentList';
-import { ArrowRight, Download } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 const PublishStep: React.FC = () => {
   const { 
@@ -29,36 +29,6 @@ const PublishStep: React.FC = () => {
   const handleThemeChange = (theme: 'light' | 'dark' | 'purple') => {
     setFormData(prev => ({ ...prev, theme }));
     updateLandingPage({ theme });
-  };
-
-  const handleExportData = () => {
-    try {
-      const marketingToolData = {
-        business,
-        contentIdeas,
-        landingPage,
-        // Including all other data
-        date: new Date().toISOString(),
-      };
-      
-      // Create a Blob containing the JSON data
-      const blob = new Blob([JSON.stringify(marketingToolData, null, 2)], { type: 'application/json' });
-      
-      // Create a download link and trigger the download
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${business.name || 'marketing'}_toolkit_data.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      
-      toast.success('Marketing toolkit data exported successfully!');
-    } catch (error) {
-      console.error('Error exporting data:', error);
-      toast.error('Failed to export marketing toolkit data');
-    }
   };
 
   return (
@@ -104,23 +74,13 @@ const PublishStep: React.FC = () => {
         <Button variant="outline" onClick={() => setCurrentStep(6)}>
           Back
         </Button>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline"
-            onClick={handleExportData}
-            className="flex items-center gap-2"
-          >
-            <Download className="h-4 w-4" />
-            Export Data
-          </Button>
-          <Button 
-            onClick={() => toast.success('All done! Your marketing toolkit is ready to use.')} 
-            className="bg-marketing-600 hover:bg-marketing-700 transition-all duration-300 flex items-center gap-2 group"
-          >
-            Finish
-            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-          </Button>
-        </div>
+        <Button 
+          onClick={() => toast.success('All done! Your marketing toolkit is ready to use.')} 
+          className="bg-marketing-600 hover:bg-marketing-700 transition-all duration-300 flex items-center gap-2 group"
+        >
+          Finish
+          <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+        </Button>
       </div>
     </div>
   );

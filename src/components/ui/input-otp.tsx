@@ -1,16 +1,9 @@
-
 import * as React from "react"
 import { OTPInput, OTPInputContext } from "input-otp"
 import { Dot } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-/**
- * InputOTP Component
- * 
- * A one-time password input component for authentication codes
- * Built on top of the input-otp library
- */
 const InputOTP = React.forwardRef<
   React.ElementRef<typeof OTPInput>,
   React.ComponentPropsWithoutRef<typeof OTPInput>
@@ -27,11 +20,6 @@ const InputOTP = React.forwardRef<
 ))
 InputOTP.displayName = "InputOTP"
 
-/**
- * InputOTPGroup Component
- * 
- * A container for grouping OTP input slots
- */
 const InputOTPGroup = React.forwardRef<
   React.ElementRef<"div">,
   React.ComponentPropsWithoutRef<"div">
@@ -40,12 +28,6 @@ const InputOTPGroup = React.forwardRef<
 ))
 InputOTPGroup.displayName = "InputOTPGroup"
 
-/**
- * InputOTPSlot Component
- * 
- * An individual input slot for a character in the OTP
- * Shows a caret animation when active
- */
 const InputOTPSlot = React.forwardRef<
   React.ElementRef<"div">,
   React.ComponentPropsWithoutRef<"div"> & { index: number }
@@ -74,11 +56,6 @@ const InputOTPSlot = React.forwardRef<
 })
 InputOTPSlot.displayName = "InputOTPSlot"
 
-/**
- * InputOTPSeparator Component
- * 
- * A visual separator between OTP input groups
- */
 const InputOTPSeparator = React.forwardRef<
   React.ElementRef<"div">,
   React.ComponentPropsWithoutRef<"div">
