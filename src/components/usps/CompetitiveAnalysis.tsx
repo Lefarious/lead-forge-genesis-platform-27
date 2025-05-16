@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { generateCompetitiveAnalysis } from '@/utils/llmUtils';
-import { toast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface CompetitiveAnalysisProps {
   business: any;
@@ -16,10 +16,15 @@ const CompetitiveAnalysis: React.FC<CompetitiveAnalysisProps> = ({ business, usp
   const [analysis, setAnalysis] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const { toast } = useToast();
 
   const generateAnalysis = async () => {
     if (!localStorage.getItem('openai_api_key')) {
-      toast.error('Please set your OpenAI API key first');
+      toast({
+        title: "Error",
+        description: "Please set your OpenAI API key first",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -29,7 +34,12 @@ const CompetitiveAnalysis: React.FC<CompetitiveAnalysisProps> = ({ business, usp
       setAnalysis(result);
       setIsExpanded(true);
     } catch (error) {
-      toast.error('Failed to generate competitive analysis');
+      const errorMessage = error instanceof Error ? error.message : "Failed to generate competitive analysis";
+      toast({
+        title: "Generation Failed",
+        description: errorMessage,
+        variant: "destructive"
+      });
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -38,7 +48,7 @@ const CompetitiveAnalysis: React.FC<CompetitiveAnalysisProps> = ({ business, usp
 
   // Helper function to determine health badge color
   const getHealthBadgeColor = (health: string) => {
-    switch (health.toLowerCase()) {
+    switch (health?.toLowerCase()) {
       case 'strong':
         return 'bg-green-500 hover:bg-green-600';
       case 'moderate':

@@ -171,25 +171,8 @@ export const generateICPs = async (business: any, existingICPs: any[] = []): Pro
         console.error('Second parse attempt failed:', secondParseError);
         console.log('Raw content for debugging:', contentString);
         
-        // As a last resort, create a basic ICP from the business information
-        return [{
-          id: `gen-icp-${Date.now()}-0`,
-          title: `${business.industry} Customer`,
-          description: `A typical customer in the ${business.industry} industry that could benefit from ${business.name}'s services.`,
-          demographics: JSON.stringify({
-            companySize: "Various sizes",
-            industries: [business.industry || "Multiple industries"],
-            regions: ["Global"],
-            jobTitles: ["Decision makers"],
-            technologyAdoption: "Mixed"
-          }),
-          blueOceanScore: 5,
-          reachMethods: ["Industry events", "LinkedIn marketing", "Email campaigns"],
-          productSuggestions: ["Customized solutions", "Mobile integration", "Analytics dashboard"],
-          painPoints: ["Lack of expertise", "Inefficient processes", "Difficulty tracking results"],
-          goals: ["Improve efficiency", "Increase revenue", "Better customer experience"],
-          isCustomAdded: false
-        }];
+        // Instead of creating a basic ICP, throw an error
+        throw new Error('Failed to generate ICPs. The AI response could not be properly parsed.');
       }
     }
     
@@ -303,6 +286,11 @@ export const generateUSPs = async (business: any, icps: any[], existingUSPs: any
     } else if (parsedContent && typeof parsedContent === 'object') {
       // Handle case where response is an object with USPs property
       usps = parsedContent.USPs || parsedContent.usps || [parsedContent];
+    }
+    
+    // Validate that we have data
+    if (!usps || usps.length === 0) {
+      throw new Error('No valid USPs found in response');
     }
     
     // Filter out any USPs that duplicate existing ones - adding null check
@@ -423,6 +411,11 @@ export const generateKeywords = async (
     // Ensure we have an array of keywords
     let keywords = Array.isArray(parsedContent) ? parsedContent : [parsedContent];
     
+    // Validate that we have data
+    if (!keywords || keywords.length === 0) {
+      throw new Error('No valid keywords found in response');
+    }
+    
     // Filter out any keywords that duplicate existing ones
     keywords = keywords.filter(kw => 
       !existingTerms.includes((kw.term || kw.Term || '').toLowerCase())
@@ -505,6 +498,11 @@ export const generateContentIdeas = async (
     // Ensure proper array format and add IDs
     let contentIdeas = Array.isArray(parsedContent) ? parsedContent : [parsedContent];
     
+    // Validate that we have data
+    if (!contentIdeas || contentIdeas.length === 0) {
+      throw new Error('No valid content ideas found in response');
+    }
+    
     return contentIdeas.map((idea: any, index: number) => ({
       id: `gen-content-${Date.now()}-${index}`,
       title: idea.title,
@@ -569,11 +567,7 @@ export const validateCustomICP = async (icp: any, business: any): Promise<{isVal
     };
   } catch (error) {
     console.error('ICP validation error:', error);
-    // Default to valid in case of error
-    return {
-      isValid: true,
-      feedback: "Couldn't validate due to an error, proceeding with caution."
-    };
+    throw error;
   }
 };
 
@@ -611,7 +605,14 @@ export const generateCompetitiveAnalysis = async (business: any, usp: any): Prom
     console.log('Competitive analysis response:', responseData);
 
     const contentString = responseData.choices[0].message.content;
-    return JSON.parse(contentString);
+    const parsedContent = JSON.parse(contentString);
+    
+    // Validate that we have data
+    if (!parsedContent) {
+      throw new Error('No valid competitive analysis found in response');
+    }
+    
+    return parsedContent;
   } catch (error) {
     console.error('Competitive analysis error:', error);
     throw error;
