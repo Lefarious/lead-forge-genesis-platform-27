@@ -85,14 +85,14 @@ const CompetitiveAnalysis: React.FC<CompetitiveAnalysisProps> = ({ business, usp
           <CardHeader className="pb-2">
             <div className="flex justify-between items-center">
               <CardTitle className="text-lg">Market Analysis</CardTitle>
-              {analysis.uspHealth && (
-                <Badge className={getHealthBadgeColor(analysis.uspHealth)}>
-                  {analysis.uspHealth}
+              {analysis.usphealth && (
+                <Badge className={getHealthBadgeColor(analysis.usphealth)}>
+                  {analysis.usphealth}
                 </Badge>
               )}
             </div>
             <CardDescription>
-              {analysis.healthReasoning || "Analysis of this USP's market position"}
+              {analysis.healthreasoning || "Analysis of this USP's market position"}
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-0">
@@ -101,11 +101,11 @@ const CompetitiveAnalysis: React.FC<CompetitiveAnalysisProps> = ({ business, usp
                 <div>
                   <h4 className="font-medium mb-2 text-marketing-700">Market Substitutes</h4>
                   <ul className="list-disc list-inside space-y-1 pl-2 text-sm">
-                    {Array.isArray(analysis.marketSubstitutes) ? 
-                      analysis.marketSubstitutes.map((substitute: string, i: number) => (
+                    {Array.isArray(analysis.marketsubstitutes) ? 
+                      analysis.marketsubstitutes.map((substitute: string, i: number) => (
                         <li key={i}>{substitute}</li>
                       )) : 
-                      <li>{analysis.marketSubstitutes}</li>
+                      <li>{analysis.marketsubstitutes}</li>
                     }
                   </ul>
                 </div>
@@ -114,11 +114,11 @@ const CompetitiveAnalysis: React.FC<CompetitiveAnalysisProps> = ({ business, usp
                   <div className="bg-red-50 p-3 rounded-md">
                     <h4 className="font-medium mb-2 text-red-700">Competitor Advantages</h4>
                     <ul className="list-disc list-inside space-y-1 pl-2 text-sm">
-                      {Array.isArray(analysis.competitorAdvantages) ? 
-                        analysis.competitorAdvantages.map((advantage: string, i: number) => (
+                      {Array.isArray(analysis.competitoradvantages) ? 
+                        analysis.competitoradvantages.map((advantage: string, i: number) => (
                           <li key={i}>{advantage}</li>
                         )) : 
-                        <li>{analysis.competitorAdvantages}</li>
+                        <li>{analysis.competitoradvantages}</li>
                       }
                     </ul>
                   </div>
@@ -126,11 +126,11 @@ const CompetitiveAnalysis: React.FC<CompetitiveAnalysisProps> = ({ business, usp
                   <div className="bg-green-50 p-3 rounded-md">
                     <h4 className="font-medium mb-2 text-green-700">Our Advantages</h4>
                     <ul className="list-disc list-inside space-y-1 pl-2 text-sm">
-                      {Array.isArray(analysis.businessAdvantages) ? 
-                        analysis.businessAdvantages.map((advantage: string, i: number) => (
+                      {Array.isArray(analysis.businessadvantages) ? 
+                        analysis.businessadvantages.map((advantage: string, i: number) => (
                           <li key={i}>{advantage}</li>
                         )) : 
-                        <li>{analysis.businessAdvantages}</li>
+                        <li>{analysis.businessadvantages}</li>
                       }
                     </ul>
                   </div>
@@ -141,11 +141,14 @@ const CompetitiveAnalysis: React.FC<CompetitiveAnalysisProps> = ({ business, usp
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <h5 className="text-sm font-semibold mb-1">Pricing Strategy</h5>
-                      <p className="text-sm">{analysis.pricingStrategy}</p>
+                      <p className="text-sm">{analysis.pricingstrategy}</p>
                     </div>
                     <div>
                       <h5 className="text-sm font-semibold mb-1">Monetization Plan</h5>
-                      <p className="text-sm">{analysis.monetizationPlan}</p>
+                      <p className="text-sm">{Array.isArray(analysis.monetizationplan) ? 
+                        analysis.monetizationplan.join(", ") : 
+                        analysis.monetizationplan}
+                      </p>
                     </div>
                   </div>
                 </div>

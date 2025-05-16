@@ -32,13 +32,18 @@ const USPStep: React.FC<USPStepProps> = () => {
       return;
     }
 
+    if (icps.length === 0) {
+      toast.error('Please generate ICPs first before creating USPs');
+      return;
+    }
+
     setIsGenerating(true);
     try {
       const generatedUSPs = await generateUSPs(business, icps);
       setUSPs(generatedUSPs); 
       toast.success('Unique Selling Points generated!');
     } catch (error) {
-      toast.error('Failed to generate USPs');
+      toast.error(error instanceof Error ? error.message : 'Failed to generate USPs');
       console.error(error);
     } finally {
       setIsGenerating(false);
@@ -58,7 +63,7 @@ const USPStep: React.FC<USPStepProps> = () => {
       setUSPs([...usps, ...moreUSPs]);
       toast.success('Additional USPs generated!');
     } catch (error) {
-      toast.error('Failed to generate additional USPs');
+      toast.error(error instanceof Error ? error.message : 'Failed to generate additional USPs');
       console.error(error);
     } finally {
       setIsGenerating(false);
@@ -137,7 +142,7 @@ const USPStep: React.FC<USPStepProps> = () => {
               <Card key={usp.id} className={usp.isCustomAdded ? "border-marketing-300 bg-marketing-50/30" : ""}>
                 <CardHeader>
                   <CardTitle className="text-xl">{usp.title}</CardTitle>
-                  <CardDescription>Target: {usp.targetICP}</CardDescription>
+                  <CardDescription>Target: {usp.targetICP || "Not specified"}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
@@ -145,7 +150,7 @@ const USPStep: React.FC<USPStepProps> = () => {
                   </div>
                   <div className="bg-marketing-50 p-3 rounded-md">
                     <h4 className="font-medium text-sm mb-1 text-marketing-700">Value Proposition:</h4>
-                    <p className="text-sm text-gray-700">{usp.valueProposition}</p>
+                    <p className="text-sm text-gray-700">{usp.valueProposition || "Not specified"}</p>
                   </div>
                   
                   {expandedUSP === usp.id ? (
