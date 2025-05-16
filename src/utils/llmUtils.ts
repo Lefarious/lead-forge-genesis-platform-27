@@ -50,17 +50,17 @@ export const generateGeographies = async (business: any, existingGeographies: an
         content: `You are an expert marketing strategist helping a business identify the best target countries for expansion.
         Given the following business information, analyze and recommend 2-3 countries to target.
         For each country, provide:
-        - Region (country name)
-        - Market Size (in USD)
-        - Growth Rate (% annually)
-        - Competition Level (High, Medium, Low)
-        - A brief explanation of why this country is a good target (Why Target)
-        - A strategic recommendation for this market (Recommendation)
-        - Pricing Power (Strong, Moderate, Weak) - how much pricing leverage the business would have in this market
-        - Profitability Rating (High, Medium, Low) - expected profitability in this market
-        - Brand Personality (brief description) - what brand traits would resonate best in this market
+        - region (country name)
+        - marketSize (in USD)
+        - growthRate (% annually)
+        - competitionLevel (High, Medium, Low)
+        - whyTarget (a brief explanation of why this country is a good target)
+        - recommendation (a strategic recommendation for this market)
+        - pricingPower (Strong, Moderate, Weak) - how much pricing leverage the business would have in this market
+        - profitabilityRating (High, Medium, Low) - expected profitability in this market
+        - brandPersonality (brief description) - what brand traits would resonate best in this market
         Ensure the countries are diverse and not already in the existing list.
-        Respond in JSON format only.`
+        Respond in JSON format only, using exactly these field names.`
       },
       {
         role: 'user',
@@ -77,19 +77,23 @@ export const generateGeographies = async (business: any, existingGeographies: an
     let geographies = Array.isArray(parsedContent) ? parsedContent : [parsedContent];
 
     // Filter out existing regions
-    geographies = geographies.filter(geo => !existingRegions.includes(geo.region.toLowerCase()));
+    geographies = geographies.filter(geo => !existingRegions.includes(geo.region?.toLowerCase()));
+
+    if (geographies.length === 0) {
+      throw new Error('No new geography recommendations could be generated');
+    }
 
     return geographies.map((geo: any, index: number) => ({
       id: `gen-geo-${Date.now()}-${index}`,
-      region: geo.Region || geo.region,
-      marketSize: geo['Market Size'] || geo.marketSize,
-      growthRate: geo['Growth Rate'] || geo.growthRate,
-      competitionLevel: geo.Competition || geo.competitionLevel,
-      whyTarget: geo['Why Target'] || geo.whyTarget,
-      recommendation: geo.Recommendation || geo.recommendation,
-      pricingPower: geo['Pricing Power'] || geo.pricingPower,
-      profitabilityRating: geo['Profitability Rating'] || geo.profitabilityRating,
-      brandPersonality: geo['Brand Personality'] || geo.brandPersonality,
+      region: geo.region,
+      marketSize: geo.marketSize,
+      growthRate: geo.growthRate,
+      competitionLevel: geo.competitionLevel,
+      whyTarget: geo.whyTarget,
+      recommendation: geo.recommendation,
+      pricingPower: geo.pricingPower,
+      profitabilityRating: geo.profitabilityRating,
+      brandPersonality: geo.brandPersonality,
       isCustomAdded: false
     }));
   } catch (error) {
@@ -109,18 +113,19 @@ export const generateICPs = async (business: any, existingICPs: any[] = []): Pro
         content: `You are an expert marketing strategist helping a business identify their ideal customer profiles (ICPs).
         Based on the business information provided, generate 2-3 detailed ICPs that would be ideal targets for their products/services.
         For each ICP provide:
-        - Title (concise name for this customer segment)
-        - Description (2-3 sentences about this customer type)
-        - Demographics (as a JSON object with companySize, industries, regions, jobTitles, and technologyAdoption)
-        - BlueOceanScore (a number from 1-10, where 1 is a "red ocean" with high competition and 10 is a "blue ocean" with little competition)
-        - ReachMethods (3-5 specific channels or methods to effectively reach this ICP)
-        - ProductSuggestions (3-5 specific ways to tailor or tweak products to better meet this ICP's needs)
-        - Pain Points (3-5 specific problems this ICP faces that the business could solve)
-        - Goals (3-5 key objectives this ICP is trying to achieve)
+        - title (concise name for this customer segment)
+        - description (2-3 sentences about this customer type)
+        - demographics (as a JSON object with companySize, industries, regions, jobTitles, and technologyAdoption)
+        - blueOceanScore (a number from 1-10, where 1 is a "red ocean" with high competition and 10 is a "blue ocean" with little competition)
+        - reachMethods (3-5 specific channels or methods to effectively reach this ICP)
+        - productSuggestions (3-5 specific ways to tailor or tweak products to better meet this ICP's needs)
+        - painPoints (3-5 specific problems this ICP faces that the business could solve)
+        - goals (3-5 key objectives this ICP is trying to achieve)
         Ensure these are diverse, focused profiles that don't overlap too much with each other.
         Make sure none of the ICPs duplicate existing ones.
         ALWAYS provide complete demographic information, even if it needs to be generalized.
-        IMPORTANT: Return a valid JSON array only, with no additional text or markdown formatting.`
+        IMPORTANT: Return a valid JSON array only, with no additional text or markdown formatting.
+        Use exactly these field names in your response, all in lowercase.`
       },
       {
         role: 'user',
@@ -170,8 +175,6 @@ export const generateICPs = async (business: any, existingICPs: any[] = []): Pro
       } catch (secondParseError) {
         console.error('Second parse attempt failed:', secondParseError);
         console.log('Raw content for debugging:', contentString);
-        
-        // Instead of creating a basic ICP, throw an error
         throw new Error('Failed to generate ICPs. The AI response could not be properly parsed.');
       }
     }
@@ -204,30 +207,24 @@ export const generateICPs = async (business: any, existingICPs: any[] = []): Pro
     // Format the ICPs into our standard structure
     return icps.map((icp: any, index: number) => ({
       id: `gen-icp-${Date.now()}-${index}`,
-      title: icp.title || icp.Title || `Customer Profile ${index + 1}`,
-      description: icp.description || icp.Description || `Customer profile for ${business.name}`,
+      title: icp.title,
+      description: icp.description,
       demographics: typeof icp.demographics === 'string' ? 
         icp.demographics : 
-        JSON.stringify(icp.demographics || icp.Demographics || {
-          companySize: "Various",
-          industries: [business.industry || "Multiple"],
-          regions: ["Global"],
-          jobTitles: ["Various roles"],
-          technologyAdoption: "Mixed"
-        }),
-      blueOceanScore: icp.blueOceanScore || icp.BlueOceanScore || 5,
-      reachMethods: Array.isArray(icp.reachMethods || icp.ReachMethods) ? 
-        (icp.reachMethods || icp.ReachMethods) : 
-        [(icp.reachMethods || icp.ReachMethods || "Digital marketing")],
-      productSuggestions: Array.isArray(icp.productSuggestions || icp.ProductSuggestions) ? 
-        (icp.productSuggestions || icp.ProductSuggestions) : 
-        [(icp.productSuggestions || icp.ProductSuggestions || "Customized solution")],
-      painPoints: Array.isArray(icp.painPoints || icp.PainPoints) ? 
-        (icp.painPoints || icp.PainPoints) : 
-        [(icp.painPoints || icp.PainPoints || "Industry challenges")],
-      goals: Array.isArray(icp.goals || icp.Goals) ? 
-        (icp.goals || icp.Goals) : 
-        [(icp.goals || icp.Goals || "Business improvement")],
+        JSON.stringify(icp.demographics || {}),
+      blueOceanScore: icp.blueOceanScore || 5,
+      reachMethods: Array.isArray(icp.reachMethods) ? 
+        icp.reachMethods : 
+        [icp.reachMethods || ""],
+      productSuggestions: Array.isArray(icp.productSuggestions) ? 
+        icp.productSuggestions : 
+        [icp.productSuggestions || ""],
+      painPoints: Array.isArray(icp.painPoints) ? 
+        icp.painPoints : 
+        [icp.painPoints || ""],
+      goals: Array.isArray(icp.goals) ? 
+        icp.goals : 
+        [icp.goals || ""],
       isCustomAdded: false
     }));
   } catch (error) {
@@ -238,7 +235,7 @@ export const generateICPs = async (business: any, existingICPs: any[] = []): Pro
 
 export const generateUSPs = async (business: any, icps: any[], existingUSPs: any[] = []): Promise<any[]> => {
   try {
-    // Extract existing titles to avoid duplicates - adding null check to prevent error
+    // Extract existing titles to avoid duplicates
     const existingTitles = existingUSPs.map(usp => usp.title ? usp.title.toLowerCase() : '');
     
     // Include ICPs in the prompt
@@ -252,13 +249,13 @@ export const generateUSPs = async (business: any, icps: any[], existingUSPs: any
         content: `You are an expert marketing strategist helping a business identify their unique selling propositions (USPs).
         Based on the business information and ICPs provided, generate 2-3 strong USPs that would appeal to their ideal customers.
         For each USP provide:
-        - Title (concise name for this USP)
-        - Description (2-3 sentences explaining this USP)
-        - Target ICP (which ICP from the provided list this USP primarily targets)
-        - Value Proposition (clear statement of the value delivered)
+        - title (concise name for this USP)
+        - description (2-3 sentences explaining this USP)
+        - targetICP (which ICP from the provided list this USP primarily targets)
+        - valueProposition (clear statement of the value delivered)
         Ensure these are compelling differentiators that are meaningful to the target audience.
         Make sure none of the USPs duplicate existing ones.
-        Respond in JSON format only.`
+        Respond in JSON format only using exactly these field names, all in lowercase.`
       },
       {
         role: 'user',
@@ -285,7 +282,7 @@ export const generateUSPs = async (business: any, icps: any[], existingUSPs: any
       usps = parsedContent;
     } else if (parsedContent && typeof parsedContent === 'object') {
       // Handle case where response is an object with USPs property
-      usps = parsedContent.USPs || parsedContent.usps || [parsedContent];
+      usps = parsedContent.usps || [parsedContent];
     }
     
     // Validate that we have data
@@ -295,17 +292,17 @@ export const generateUSPs = async (business: any, icps: any[], existingUSPs: any
     
     // Filter out any USPs that duplicate existing ones - adding null check
     usps = usps.filter(usp => {
-      if (!usp.title && !usp.Title) return true; // Keep items without title
-      const title = (usp.title || usp.Title || '').toLowerCase();
+      if (!usp.title) return true; // Keep items without title
+      const title = (usp.title || '').toLowerCase();
       return !existingTitles.includes(title);
     });
     
     return usps.map((usp: any, index: number) => ({
       id: `gen-usp-${Date.now()}-${index}`,
-      title: usp.title || usp.Title,
-      description: usp.description || usp.Description,
-      targetICP: usp.targetICP || usp.TargetICP,
-      valueProposition: usp.valueProposition || usp.ValueProposition,
+      title: usp.title,
+      description: usp.description,
+      targetICP: usp.targetICP,
+      valueProposition: usp.valueProposition,
       isCustomAdded: false
     }));
   } catch (error) {
@@ -377,18 +374,18 @@ export const generateKeywords = async (
         content: `You are an expert SEO strategist helping a business identify valuable keywords.
         Based on all the provided business data, generate EXACTLY 15 highly relevant keywords.
         For each keyword provide:
-        - Term (the actual search term or phrase)
-        - Search Volume (estimated monthly searches, e.g., "1,000-5,000")
-        - Difficulty (Low, Medium-Low, Medium, Medium-High, High)
-        - Relevance (Low, Medium, High)
-        - Related ICP (which ICP from the provided list this keyword primarily targets)
-        - Competitor Usage (Low, Medium, High - how frequently competitors are using this keyword)
+        - term (the actual search term or phrase)
+        - searchVolume (estimated monthly searches, e.g., "1,000-5,000")
+        - difficulty (Low, Medium-Low, Medium, Medium-High, High)
+        - relevance (Low, Medium, High)
+        - relatedICP (which ICP from the provided list this keyword primarily targets)
+        - competitorUsage (Low, Medium, High - how frequently competitors are using this keyword)
         
         Ensure keywords are varied, specific, and have commercial intent where appropriate.
         Include some long-tail keywords with lower competition.
         Generate keywords that cover all geographic regions and ICPs, but prioritize those with higher profitability.
         DO NOT INCLUDE ANY KEYWORDS THAT ARE ALREADY IN THE EXISTING LIST.
-        Respond in JSON format only.`
+        Respond in JSON format only, using exactly these field names, all in lowercase.`
       },
       {
         role: 'user',
@@ -418,17 +415,17 @@ export const generateKeywords = async (
     
     // Filter out any keywords that duplicate existing ones
     keywords = keywords.filter(kw => 
-      !existingTerms.includes((kw.term || kw.Term || '').toLowerCase())
+      !existingTerms.includes((kw.term || '').toLowerCase())
     );
     
     return keywords.map((keyword: any, index: number) => ({
       id: `gen-kw-${Date.now()}-${index}`,
-      term: keyword.term || keyword.Term,
-      searchVolume: keyword.searchVolume || keyword['Search Volume'],
-      difficulty: keyword.difficulty || keyword.Difficulty,
-      relevance: keyword.relevance || keyword.Relevance,
-      relatedICP: keyword.relatedICP || keyword['Related ICP'],
-      competitorUsage: keyword.competitorUsage || keyword['Competitor Usage'],
+      term: keyword.term,
+      searchVolume: keyword.searchVolume,
+      difficulty: keyword.difficulty,
+      relevance: keyword.relevance,
+      relatedICP: keyword.relatedICP,
+      competitorUsage: keyword.competitorUsage,
       isCustomAdded: false
     }));
   } catch (error) {
@@ -477,11 +474,16 @@ export const generateContentIdeas = async (
         role: 'system',
         content: `You are an expert content strategist helping a business create valuable marketing content. 
         Generate 2-3 unique, high-value content ideas based on the provided business information, ICPs, USPs, target geographies, and keywords. 
-        Each content idea should include: title, content type (Blog Post, White Paper, eBook, Webinar, Case Study, Infographic, Video), 
-        target ICP, target keywords (2-3 from provided list), a detailed outline (5-7 points), and estimated value (Low, Medium, High).
+        Each content idea should include: 
+        - title (catchy title for the content)
+        - type (Blog Post, White Paper, eBook, Webinar, Case Study, Infographic, Video)
+        - targetICP (which ICP from the provided list this content primarily targets)
+        - targetKeywords (2-3 from provided list)
+        - outline (5-7 points as an array)
+        - estimatedValue (Low, Medium, High)
         Make sure titles are catchy, specific, and include keywords. Content should address pain points and goals.
         DO NOT DUPLICATE any existing content titles.
-        Respond in JSON format only.`
+        Respond in JSON format only using exactly these field names, all in lowercase.`
       },
       {
         role: 'user',
@@ -506,7 +508,7 @@ export const generateContentIdeas = async (
     return contentIdeas.map((idea: any, index: number) => ({
       id: `gen-content-${Date.now()}-${index}`,
       title: idea.title,
-      type: idea.type || idea.contentType,
+      type: idea.type,
       targetICP: idea.targetICP,
       targetKeywords: idea.targetKeywords,
       outline: idea.outline,
@@ -578,15 +580,15 @@ export const generateCompetitiveAnalysis = async (business: any, usp: any): Prom
         role: 'system',
         content: `You are an expert market analyst helping a business understand the competitive landscape for one of their Unique Selling Points (USPs).
         Based on the business information and USP provided, generate a competitive analysis that includes:
-        1. Market Substitutes: List 2-3 closest substitutes or competitors in the market
-        2. Competitor Advantages: What advantages these competitors have over the business
-        3. Business Advantages: What advantages the business has over these competitors
-        4. Pricing Strategy: Recommended pricing strategy for this USP (e.g., premium, value, freemium, subscription)
-        5. Monetization Plan: Specific monetization suggestions for this USP
-        6. USP Health: An overall assessment of the USP's strength (Strong, Moderate, Needs Improvement)
-        7. Health Reasoning: Brief explanation of the USP health assessment
+        1. marketSubstitutes: List 2-3 closest substitutes or competitors in the market
+        2. competitorAdvantages: What advantages these competitors have over the business
+        3. businessAdvantages: What advantages the business has over these competitors
+        4. pricingStrategy: Recommended pricing strategy for this USP (e.g., premium, value, freemium, subscription)
+        5. monetizationPlan: Specific monetization suggestions for this USP
+        6. uspHealth: An overall assessment of the USP's strength (Strong, Moderate, Needs Improvement)
+        7. healthReasoning: Brief explanation of the USP health assessment
         
-        Respond in JSON format with these exact keys.`
+        Respond in JSON format using exactly these field names, all in lowercase.`
       },
       {
         role: 'user',
@@ -618,3 +620,4 @@ export const generateCompetitiveAnalysis = async (business: any, usp: any): Prom
     throw error;
   }
 };
+
