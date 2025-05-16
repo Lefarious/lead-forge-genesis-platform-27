@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
@@ -153,17 +154,7 @@ const USPStep: React.FC<USPStepProps> = () => {
                     <p className="text-sm text-gray-700">{usp.valueProposition || "Not specified"}</p>
                   </div>
                   
-                  {expandedUSP === usp.id ? (
-                    <CompetitiveAnalysis business={business} usp={usp} />
-                  ) : (
-                    <Button 
-                      variant="ghost" 
-                      className="text-marketing-600 text-sm p-0 h-auto"
-                      onClick={() => setExpandedUSP(usp.id)}
-                    >
-                      Show market analysis
-                    </Button>
-                  )}
+                  <CompetitiveAnalysis business={business} usp={usp} />
                   
                   {expandedUSP === usp.id && (
                     <Button 
