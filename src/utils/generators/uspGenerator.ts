@@ -22,10 +22,11 @@ export const generateUSPs = async (business: any, icps: any[], existingUSPs: any
         - description (2-3 sentences explaining this USP)
         - targetICP (which ICP from the provided list this USP primarily targets, must be exact match of ICP title)
         - valueProposition (clear statement of the value delivered)
+        - competitorComparison (how this USP compares to competitors' offerings - 1-2 sentences)
         Ensure these are compelling differentiators that are meaningful to the target audience.
         Make sure none of the USPs duplicate existing ones.
         VERY IMPORTANT: Return a valid JSON ARRAY only, with no additional text or markdown formatting.
-        Use exactly these field names with this exact capitalization: title, description, targetICP, valueProposition.`
+        Use exactly these field names with this exact capitalization: title, description, targetICP, valueProposition, competitorComparison.`
       },
       {
         role: 'user',
@@ -61,8 +62,9 @@ export const generateUSPs = async (business: any, icps: any[], existingUSPs: any
       id: `gen-usp-${Date.now()}-${index}`,
       title: usp.title || 'Untitled USP',
       description: usp.description || 'No description provided',
-      targetICP: usp.targetICP || '', // Now using correct case
-      valueProposition: usp.valueProposition || '', // Now using correct case
+      targetICP: usp.targetICP || '', // Using correct case
+      valueProposition: usp.valueProposition || '', // Using correct case
+      competitorComparison: usp.competitorComparison || 'No competitor comparison provided',
       isCustomAdded: false
     }));
   } catch (error) {

@@ -93,19 +93,14 @@ const ContentCard: React.FC<ContentCardProps> = ({ content, onPublish, onEdit })
             </div>
           </div>
           
-          {/* Content outline section */}
+          {/* Content outline section - UPDATED to show all points */}
           <div>
             <h4 className="text-sm font-medium mb-1">Outline:</h4>
             {Array.isArray(content.outline) && content.outline.length > 0 ? (
               <ul className="text-sm text-gray-600 pl-5 list-disc">
-                {content.outline.slice(0, 3).map((point, idx) => (
+                {content.outline.map((point, idx) => (
                   <li key={idx} className="text-sm">{point}</li>
                 ))}
-                {content.outline.length > 3 && (
-                  <li className="text-marketing-600 font-medium">
-                    +{content.outline.length - 3} more sections
-                  </li>
-                )}
               </ul>
             ) : (
               <p className="text-sm text-gray-500">No outline provided</p>

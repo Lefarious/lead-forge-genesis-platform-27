@@ -66,7 +66,7 @@ export const generateKeywords = async (
         Based on all the provided business data, generate EXACTLY 15 highly relevant keywords.
         For each keyword provide:
         - term (the actual search term or phrase)
-        - searchVolume (estimated monthly searches, e.g., "1,000-5,000")
+        - searchVolume (estimated monthly searches, e.g., "1,000-5,000" - MUST be a string)
         - difficulty (Low, Medium-Low, Medium, Medium-High, High)
         - relevance (Low, Medium, High)
         - relatedICP (which ICP from the provided list this keyword primarily targets)
@@ -109,11 +109,11 @@ export const generateKeywords = async (
       !existingTerms.includes((kw.term || '').toLowerCase())
     );
     
-    // Apply default values to any missing fields
+    // Apply default values to any missing fields and ensure correct types
     return keywords.map((keyword: any, index: number) => ({
       id: `gen-kw-${Date.now()}-${index}`,
       term: keyword.term || 'Untitled Keyword',
-      searchVolume: keyword.searchVolume || 'Unknown',
+      searchVolume: String(keyword.searchVolume || 'Unknown'), // Ensure it's a string
       difficulty: keyword.difficulty || 'Medium',
       relevance: keyword.relevance || 'Medium',
       relatedICP: keyword.relatedICP || (icps.length > 0 ? icps[0].title : 'General'),

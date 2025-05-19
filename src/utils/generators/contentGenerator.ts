@@ -41,13 +41,13 @@ export const generateContentIdeas = async (
       {
         role: 'system',
         content: `You are an expert content strategist helping a business create valuable marketing content. 
-        Generate 2-3 unique, high-value content ideas based on the provided business information, ICPs, USPs, target geographies, and keywords. 
+        Generate EXACTLY 8 unique, high-value content ideas based on the provided business information, ICPs, USPs, target geographies, and keywords. 
         Each content idea should include: 
         - title (catchy title for the content)
         - type (Blog Post, White Paper, eBook, Webinar, Case Study, Infographic, Video)
         - targetICP (which ICP from the provided list this content primarily targets)
         - targetKeywords (2-3 from provided list)
-        - outline (5-7 points as an array)
+        - outline (EXACTLY 5-7 detailed points as an array - NEVER LESS THAN 5 POINTS)
         - estimatedValue (Low, Medium, High)
         Make sure titles are catchy, specific, and include keywords. Content should address pain points and goals.
         DO NOT DUPLICATE any existing content titles.
@@ -59,7 +59,7 @@ export const generateContentIdeas = async (
       }
     ];
 
-    const responseData = await callOpenAI(messages, { maxTokens: 2000 });
+    const responseData = await callOpenAI(messages, { maxTokens: 4000 });
     console.log('Content generation response:', responseData);
 
     const contentString = responseData.choices[0].message.content;
@@ -75,13 +75,29 @@ export const generateContentIdeas = async (
     
     return contentIdeas.map((idea: any, index: number) => {
       // Ensure each idea has all required fields with defaults for missing values
+      // Make sure outline has at least 5 points
+      let outline = Array.isArray(idea.outline) ? idea.outline : [idea.outline || 'Introduction'];
+      if (outline.length < 5) {
+        // Add generic points to reach minimum of 5
+        const additionalPoints = [
+          'Introduction to the topic',
+          'Key considerations for implementation',
+          'Benefits and advantages',
+          'Common challenges and solutions',
+          'Conclusion and next steps'
+        ];
+        while (outline.length < 5) {
+          outline.push(additionalPoints[outline.length % additionalPoints.length]);
+        }
+      }
+      
       return {
         id: `gen-content-${Date.now()}-${index}`,
         title: idea.title || 'Untitled Content',
         type: idea.type || 'Blog Post',
         targetICP: idea.targetICP || (icps.length > 0 ? icps[0].title : 'General Audience'),
         targetKeywords: Array.isArray(idea.targetKeywords) ? idea.targetKeywords : [idea.targetKeywords || 'general'],
-        outline: Array.isArray(idea.outline) ? idea.outline : [idea.outline || 'Introduction'],
+        outline: outline,
         estimatedValue: idea.estimatedValue || 'Medium',
         published: false,
         isCustomAdded: false
