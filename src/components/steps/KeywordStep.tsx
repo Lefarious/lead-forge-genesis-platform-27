@@ -33,8 +33,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import KeywordOptimizer from '@/components/keywords/KeywordOptimizer';
-import KeywordDataVisualizer, { KeywordStats } from '@/components/keywords/KeywordDataVisualizer';
-import { fetchKeywordStats, optimizeKeywords, generateMoreSynonyms } from '@/services/keywordsApiService';
+import KeywordDataVisualizer from '@/components/keywords/KeywordDataVisualizer';
+import { fetchKeywordStats, generateMoreSynonyms } from '@/services/keywordsApiService';
 
 interface KeywordStepProps {}
 
@@ -219,22 +219,6 @@ const KeywordStep: React.FC<KeywordStepProps> = () => {
     setCurrentStep(6);
   };
 
-  const handleOptimizeKeywords = async (token: string) => {
-    if (keywords.length === 0) {
-      toast.error('No keywords to optimize');
-      return;
-    }
-
-    try {
-      const optimizedStats = await optimizeKeywords(keywords, token);
-      setKeywordStats(optimizedStats);
-      toast.success('Keywords optimized successfully!');
-    } catch (error) {
-      console.error('Failed to optimize keywords:', error);
-      toast.error('Failed to optimize keywords');
-    }
-  };
-
   const handleKeywordClick = async (keyword: Keyword) => {
     setIsLoadingStats(true);
     setSelectedKeywordStats(null);
@@ -286,7 +270,7 @@ const KeywordStep: React.FC<KeywordStepProps> = () => {
         synonyms: [...new Set([...selectedKeywordStats.synonyms, ...newSynonyms])]
       };
       
-      // Update the keyword stats array - fix the type mismatch
+      // Update the keyword stats array
       const updatedKeywordStats = keywordStats.map(stat => 
         stat.id === selectedKeywordStats.id ? updatedStats : stat
       );
@@ -408,7 +392,7 @@ const KeywordStep: React.FC<KeywordStepProps> = () => {
             </CardHeader>
             <CardContent>
               <div className="mb-4">
-                <KeywordOptimizer onOptimize={handleOptimizeKeywords} />
+                <KeywordOptimizer onGenerateMore={handleGenerateMoreKeywords} />
               </div>
               <div className="overflow-x-auto">
                 <Table>

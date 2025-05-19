@@ -117,45 +117,6 @@ export const fetchKeywordStats = async (
   }
 };
 
-// Function to simulate optimizing keywords
-export const optimizeKeywords = async (
-  keywords: Keyword[],
-  token: string
-): Promise<KeywordStats[]> => {
-  console.log(`Optimizing ${keywords.length} keywords with token: ${token.substring(0, 3)}...`);
-  
-  try {
-    if (keywords.length === 0) {
-      return [];
-    }
-    
-    // Create a customer for this batch
-    const customer = await createCustomer(keywords[0], token);
-    console.log(`Customer created for batch: ${customer.customerId}`);
-    
-    // Create a campaign
-    const campaign = await createCampaign(customer.customerId, keywords[0]);
-    console.log(`Campaign created for batch: ${campaign.campaignId}`);
-    
-    // Simulate network delay for batch processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Generate stats for each keyword
-    const stats: KeywordStats[] = [];
-    for (const keyword of keywords) {
-      stats.push(generateMockKeywordStats(keyword));
-      // Small delay between each keyword to simulate real API behavior
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-    
-    console.log(`Optimization complete for ${keywords.length} keywords`);
-    return stats;
-  } catch (error) {
-    console.error('Error optimizing keywords:', error);
-    throw new Error('Failed to optimize keywords');
-  }
-};
-
 // Function to generate more synonyms for a keyword
 export const generateMoreSynonyms = async (
   keyword: string,
