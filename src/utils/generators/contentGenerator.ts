@@ -14,7 +14,11 @@ export const generateContentIdeas = async (
     const existingTitles = existingIdeas.map(idea => (idea.title || '').toLowerCase());
     
     // Create prompts from data
-    const businessPrompt = `Business Name: ${business.name || 'Not specified'}\nIndustry: ${business.industry || 'Not specified'}\nDescription: ${business.description || 'Not specified'}\nTarget Market: ${business.targetMarket || 'Not specified'}`;
+    const businessPrompt = `Business Name: ${business.name || 'Not specified'}
+    Industry: ${business.industry || 'Not specified'}
+    Description: ${business.description || 'Not specified'}
+    Target Market: ${business.targetMarket || 'Not specified'}
+    Origin Country: ${business.country || 'Not specified'}`;
     
     const icpPrompt = icps.map(icp => 
       `ICP: ${icp.title || 'Untitled'}\nDescription: ${icp.description || 'No description'}\nPain Points: ${Array.isArray(icp.painPoints) ? icp.painPoints.join(', ') : (icp.painPoints || 'Not specified')}\nGoals: ${Array.isArray(icp.goals) ? icp.goals.join(', ') : (icp.goals || 'Not specified')}`

@@ -11,6 +11,11 @@ export const generateUSPs = async (business: any, icps: any[], existingUSPs: any
     const icpPrompt = icps.length > 0 
       ? `ICPs: ${icps.map(icp => `${icp.title} - ${icp.description}`).join('\n')}` 
       : 'No ICPs provided.';
+
+    // Include business country if available
+    const countryPrompt = business.country 
+      ? `Origin Country: ${business.country}` 
+      : 'Origin country not specified.';
     
     const messages = [
       {
@@ -34,6 +39,7 @@ export const generateUSPs = async (business: any, icps: any[], existingUSPs: any
         Industry: ${business.industry}
         Description: ${business.description}
         Main Problem: ${business.mainProblem || 'Not specified'}
+        ${countryPrompt}
         
         ${icpPrompt}`
       }

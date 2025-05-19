@@ -7,13 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Plus, Trash } from 'lucide-react';
 
 /**
  * BusinessInfoStep Component
  * 
  * This component allows users to input and manage basic information about their business,
- * including name, industry, description, and main problem solved.
+ * including name, industry, description, main problem solved, and origin country.
  */
 const BusinessInfoStep: React.FC = () => {
   const { business, setBusinessInfo, setCurrentStep, resetDataForStep } = useMarketingTool();
@@ -24,11 +23,8 @@ const BusinessInfoStep: React.FC = () => {
     industry: business.industry,
     description: business.description || '',
     mainProblem: business.mainProblem || '',
-    products: business.products || [],
+    country: business.country || '',
   });
-
-  // New product input state
-  const [newProduct, setNewProduct] = useState('');
 
   /**
    * Handle input changes for form fields
@@ -39,38 +35,13 @@ const BusinessInfoStep: React.FC = () => {
   };
 
   /**
-   * Add a new product to the list
-   */
-  const handleAddProduct = () => {
-    if (!newProduct.trim()) {
-      return;
-    }
-    
-    setFormData(prev => ({
-      ...prev,
-      products: [...prev.products, newProduct.trim()]
-    }));
-    setNewProduct('');
-  };
-
-  /**
-   * Remove a product from the list
-   */
-  const handleRemoveProduct = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      products: prev.products.filter((_, i) => i !== index)
-    }));
-  };
-
-  /**
    * Handle form submission
    */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     // Basic validation
-    if (!formData.name || !formData.industry || !formData.description || !formData.mainProblem) {
+    if (!formData.name || !formData.industry || !formData.description || !formData.mainProblem || !formData.country) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -86,6 +57,7 @@ const BusinessInfoStep: React.FC = () => {
       targetAudience: '',
       mainSolution: '',
       existingCustomers: '',
+      products: [] // Keep empty array for backward compatibility
     });
     
     setCurrentStep(2);
@@ -148,7 +120,7 @@ const BusinessInfoStep: React.FC = () => {
               />
             </div>
 
-            {/* Main problem textarea - now required */}
+            {/* Main problem textarea */}
             <div className="space-y-2">
               <Label htmlFor="mainProblem">Main Problem You Solve *</Label>
               <Textarea
@@ -162,39 +134,17 @@ const BusinessInfoStep: React.FC = () => {
               />
             </div>
 
-            {/* Products section */}
+            {/* Origin country input */}
             <div className="space-y-2">
-              <Label>Products/Services (Optional)</Label>
-              <div className="space-y-2">
-                {formData.products.map((product, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    <Input value={product} readOnly />
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => handleRemoveProduct(index)}
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-                <div className="flex items-center space-x-2">
-                  <Input 
-                    placeholder="Add a product or service"
-                    value={newProduct}
-                    onChange={(e) => setNewProduct(e.target.value)}
-                  />
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="icon"
-                    onClick={handleAddProduct}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+              <Label htmlFor="country">Origin Country *</Label>
+              <Input
+                id="country"
+                name="country"
+                value={formData.country}
+                onChange={handleInputChange}
+                placeholder="United States, Canada, etc."
+                required
+              />
             </div>
           </CardContent>
           <CardFooter className="flex justify-end">

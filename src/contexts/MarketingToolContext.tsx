@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { KeywordStats } from '@/components/keywords/KeywordDataVisualizer';
@@ -15,6 +14,7 @@ export interface BusinessInfo {
   existingCustomers: string;
   missionStatement?: string;
   companyDescription?: string;
+  country?: string; // Added country field
 }
 
 export interface ICP {
@@ -118,6 +118,7 @@ const initialBusinessInfo: BusinessInfo = {
   existingCustomers: '',
   missionStatement: '',
   companyDescription: '',
+  country: '', // Added initial country value
 };
 
 const initialLandingPage: LandingPage = {
