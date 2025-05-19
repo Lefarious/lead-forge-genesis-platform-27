@@ -20,12 +20,12 @@ export const generateUSPs = async (business: any, icps: any[], existingUSPs: any
         For each USP provide:
         - title (concise name for this USP)
         - description (2-3 sentences explaining this USP)
-        - targeticp (which ICP from the provided list this USP primarily targets, must be exact match of ICP title)
-        - valueproposition (clear statement of the value delivered)
+        - targetICP (which ICP from the provided list this USP primarily targets, must be exact match of ICP title)
+        - valueProposition (clear statement of the value delivered)
         Ensure these are compelling differentiators that are meaningful to the target audience.
         Make sure none of the USPs duplicate existing ones.
         VERY IMPORTANT: Return a valid JSON ARRAY only, with no additional text or markdown formatting.
-        Use exactly these field names, all in lowercase.`
+        Use exactly these field names with this exact capitalization: title, description, targetICP, valueProposition.`
       },
       {
         role: 'user',
@@ -56,12 +56,13 @@ export const generateUSPs = async (business: any, icps: any[], existingUSPs: any
       return !existingTitles.includes(title);
     });
     
+    // Map the response to match our expected schema, ensuring consistency with field names
     return usps.map((usp: any, index: number) => ({
       id: `gen-usp-${Date.now()}-${index}`,
       title: usp.title || 'Untitled USP',
       description: usp.description || 'No description provided',
-      targetICP: usp.targeticp || '', // lowercase in the API response
-      valueProposition: usp.valueproposition || '', // lowercase in the API response
+      targetICP: usp.targetICP || '', // Now using correct case
+      valueProposition: usp.valueProposition || '', // Now using correct case
       isCustomAdded: false
     }));
   } catch (error) {
