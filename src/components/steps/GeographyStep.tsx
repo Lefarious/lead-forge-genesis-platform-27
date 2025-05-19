@@ -1,12 +1,11 @@
-
 import React, { useState } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { Loader2, MapPin, Plus, RefreshCw, TrendingUp, BadgePercent } from 'lucide-react';
 import { Geography } from '@/contexts/MarketingToolContext';
-import { generateGeographies } from '@/utils/llmUtils';
+import { generateGeographies } from '@/utils/generators/geographyGenerator';
 import ApiKeyInput from '@/components/common/ApiKeyInput';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -63,7 +62,10 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
 
   const handleGenerateGeographies = async () => {
     if (!localStorage.getItem('openai_api_key')) {
-      toast.error('Please set your OpenAI API key first');
+      toast("Please set your OpenAI API key first", {
+        description: "An API key is required to generate geographies",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -73,9 +75,14 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
       const generatedGeographies = await generateGeographies(business, geographies);
       
       setGeographies([...geographies, ...generatedGeographies]); // Append new geographies
-      toast.success('New target geographies generated!');
+      toast("New target geographies generated!", {
+        description: "Check out your recommended target countries",
+      });
     } catch (error) {
-      toast.error('Failed to generate geographies');
+      toast("Failed to generate geographies", {
+        description: error instanceof Error ? error.message : "An error occurred",
+        variant: "destructive"
+      });
       console.error(error);
     } finally {
       setIsGenerating(false);
@@ -85,7 +92,10 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
   const handleAddCustomGeography = () => {
     if (!newGeography.region || !newGeography.marketSize || !newGeography.growthRate || 
         !newGeography.competitionLevel || !newGeography.recommendation) {
-      toast.error('Please fill all required fields');
+      toast("Please fill all required fields", {
+        description: "All fields with * are required",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -110,12 +120,14 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
       pricingPower: '',
       brandPersonality: ''
     });
-    toast.success('Custom geography added successfully');
+    toast("Custom geography added successfully");
   };
 
   const handleContinue = () => {
     if (geographies.length === 0) {
-      toast.error('Please generate geographies first');
+      toast("Please generate geographies first", {
+        variant: "destructive"
+      });
       return;
     }
     setCurrentStep(5);
