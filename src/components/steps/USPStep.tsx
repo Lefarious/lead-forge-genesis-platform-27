@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
@@ -138,38 +137,7 @@ const USPStep: React.FC<USPStepProps> = () => {
         </Card>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-6 mb-8">
-            {usps.map((usp) => (
-              <Card key={usp.id} className={usp.isCustomAdded ? "border-marketing-300 bg-marketing-50/30" : ""}>
-                <CardHeader>
-                  <CardTitle className="text-xl">{usp.title}</CardTitle>
-                  <CardDescription>Target: {usp.targetICP || "Not specified"}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <p className="text-gray-600">{usp.description}</p>
-                  </div>
-                  <div className="bg-marketing-50 p-3 rounded-md">
-                    <h4 className="font-medium text-sm mb-1 text-marketing-700">Value Proposition:</h4>
-                    <p className="text-sm text-gray-700">{usp.valueProposition || "Not specified"}</p>
-                  </div>
-                  
-                  <CompetitiveAnalysis business={business} usp={usp} />
-                  
-                  {expandedUSP === usp.id && (
-                    <Button 
-                      variant="ghost" 
-                      className="text-gray-500 text-sm p-0 h-auto"
-                      onClick={() => setExpandedUSP(null)}
-                    >
-                      Hide market analysis
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          
+          {/* Generation control buttons - moved to the top */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <Button 
               variant="outline"
@@ -195,6 +163,28 @@ const USPStep: React.FC<USPStepProps> = () => {
                 </Card>
               </DialogTrigger>
             </Dialog>
+          </div>
+          
+          <div className="grid grid-cols-1 gap-6 mb-8">
+            {usps.map((usp) => (
+              <Card key={usp.id} className={usp.isCustomAdded ? "border-marketing-300 bg-marketing-50/30" : ""}>
+                <CardHeader>
+                  <CardTitle className="text-xl">{usp.title}</CardTitle>
+                  <CardDescription>Target: {usp.targetICP || "Not specified"}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <p className="text-gray-600">{usp.description}</p>
+                  </div>
+                  <div className="bg-marketing-50 p-3 rounded-md">
+                    <h4 className="font-medium text-sm mb-1 text-marketing-700">Value Proposition:</h4>
+                    <p className="text-sm text-gray-700">{usp.valueProposition || "Not specified"}</p>
+                  </div>
+                  
+                  <CompetitiveAnalysis business={business} usp={usp} />
+                </CardContent>
+              </Card>
+            ))}
           </div>
           
           <div className="flex justify-between">

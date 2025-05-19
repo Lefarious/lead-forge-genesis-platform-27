@@ -1,3 +1,4 @@
+
 // LLM API utilities for generating marketing content
 
 // Core OpenAI API function
@@ -254,7 +255,8 @@ export const generateUSPs = async (business: any, icps: any[], existingUSPs: any
         - valueproposition (clear statement of the value delivered)
         Ensure these are compelling differentiators that are meaningful to the target audience.
         Make sure none of the USPs duplicate existing ones.
-        Respond in JSON format only using exactly these field names, all in lowercase.`
+        VERY IMPORTANT: Return a valid JSON ARRAY only, with no additional text or markdown formatting.
+        Use exactly these field names, all in lowercase.`
       },
       {
         role: 'user',
@@ -271,18 +273,49 @@ export const generateUSPs = async (business: any, icps: any[], existingUSPs: any
     console.log('USP generation response:', responseData);
 
     const contentString = responseData.choices[0].message.content;
-    const parsedContent = JSON.parse(contentString);
+    console.log('Raw USP content:', contentString);
+    
+    // More robust JSON parsing
+    let parsedContent;
+    try {
+      // Clean the content string of any markdown formatting or extra characters
+      const cleanedContentString = contentString
+        .replace(/```json|```/g, '') // Remove markdown code blocks
+        .trim();
+      
+      console.log('Cleaned content:', cleanedContentString);
+      parsedContent = JSON.parse(cleanedContentString);
+    } catch (parseError) {
+      console.error('Error parsing JSON response:', parseError);
+      
+      // More aggressive cleaning if parsing fails
+      try {
+        // Try to extract just the JSON part using regex
+        const jsonMatch = contentString.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          parsedContent = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error('Could not find valid JSON in the response');
+        }
+      } catch (secondParseError) {
+        console.error('Second parse attempt failed:', secondParseError);
+        console.log('Raw content for debugging:', contentString);
+        throw new Error('Failed to generate USPs. The AI response could not be properly parsed.');
+      }
+    }
     
     // Ensure we have an array of USPs
     let usps = [];
     
-    // Check if parsedContent is an array or object with USPs property
+    // Handle different response formats
     if (Array.isArray(parsedContent)) {
       usps = parsedContent;
     } else if (parsedContent && typeof parsedContent === 'object') {
       // Handle case where response is an object with USPs property
       usps = parsedContent.usps || [parsedContent];
     }
+    
+    console.log('Parsed USPs:', usps);
     
     // Filter out any USPs that duplicate existing ones - adding null check
     usps = usps.filter(usp => {
