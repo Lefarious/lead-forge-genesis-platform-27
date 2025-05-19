@@ -1,41 +1,64 @@
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { USP } from '@/contexts/MarketingToolContext';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useTheme } from '@/contexts/ThemeContext';
+import { Button } from '@/components/ui/button';
+import { USP } from '@/contexts/MarketingToolContext';
 
 interface USPCardProps {
   usp: USP;
-  business: any;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
+  showActions?: boolean;
 }
 
-const USPCard: React.FC<USPCardProps> = ({ usp, business }) => {
-  const { isDarkMode } = useTheme();
-  
+const USPCard: React.FC<USPCardProps> = ({
+  usp,
+  onEdit,
+  onDelete,
+  showActions = true,
+}) => {
   return (
-    <Card key={usp.id} className={usp.isCustomAdded ? "border-marketing-300 bg-marketing-50/30 dark:bg-gray-800/30 dark:border-marketing-800/50" : ""}>
-      <CardHeader>
-        <CardTitle className="text-xl">{usp.title}</CardTitle>
-        <CardDescription>Target: {usp.targetICP || "Not specified"}</CardDescription>
+    <Card className="h-full flex flex-col border-2 transition-all hover:shadow-md dark:hover:shadow-gray-800">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-xl flex justify-between items-start gap-2">
+          <span>{usp.title}</span>
+          {usp.isCustomAdded && (
+            <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+              Custom
+            </Badge>
+          )}
+        </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{usp.description}</p>
-        </div>
-        <div className={`${isDarkMode ? 'bg-gray-800/50' : 'bg-marketing-50'} p-3 rounded-md`}>
-          <h4 className={`font-medium text-sm mb-1 ${isDarkMode ? 'text-marketing-400' : 'text-marketing-700'}`}>Value Proposition:</h4>
-          <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{usp.valueProposition || "Not specified"}</p>
-        </div>
+      <CardContent className="flex-grow">
+        <p className="text-gray-600 dark:text-gray-300 mb-4">{usp.description}</p>
         
         <div className="space-y-3">
-          <h4 className={`font-medium ${isDarkMode ? 'text-marketing-400' : 'text-marketing-700'}`}>Competitive Analysis</h4>
-          
-          <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-            {usp.competitorComparison || "No competitor comparison provided"}
-          </p>
+          <div>
+            <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400">Target ICP</h4>
+            <p className="text-sm">{usp.targetICP}</p>
+          </div>
+          <div>
+            <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400">Value Proposition</h4>
+            <p className="text-sm">{usp.valueProposition}</p>
+          </div>
         </div>
       </CardContent>
+      
+      {showActions && (
+        <CardFooter className="border-t bg-gray-50 dark:bg-gray-800 flex justify-end space-x-2 pt-3">
+          {onEdit && (
+            <Button variant="outline" size="sm" onClick={() => onEdit(usp.id)}>
+              Edit
+            </Button>
+          )}
+          {onDelete && (
+            <Button variant="outline" size="sm" onClick={() => onDelete(usp.id)}>
+              Delete
+            </Button>
+          )}
+        </CardFooter>
+      )}
     </Card>
   );
 };

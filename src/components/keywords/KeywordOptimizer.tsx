@@ -7,7 +7,7 @@ import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import KeywordApiModal from './KeywordApiModal';
 
 interface KeywordOptimizerProps {
-  onOptimize: (apiKey: string) => Promise<void>;
+  onOptimize: (token: string) => Promise<void>;
 }
 
 const KeywordOptimizer: React.FC<KeywordOptimizerProps> = ({ onOptimize }) => {
@@ -17,7 +17,7 @@ const KeywordOptimizer: React.FC<KeywordOptimizerProps> = ({ onOptimize }) => {
   const { keywords } = useMarketingTool();
 
   const handleOptimizeClick = () => {
-    if (!localStorage.getItem('google_keyword_api_key')) {
+    if (!localStorage.getItem('developer_token')) {
       setIsApiModalOpen(true);
     } else {
       runOptimization();
@@ -25,15 +25,15 @@ const KeywordOptimizer: React.FC<KeywordOptimizerProps> = ({ onOptimize }) => {
   };
 
   const runOptimization = async () => {
-    const apiKey = localStorage.getItem('google_keyword_api_key');
-    if (!apiKey) {
-      toast.error('API key is required for optimization');
+    const token = localStorage.getItem('developer_token');
+    if (!token) {
+      toast.error('Developer token is required for optimization');
       return;
     }
 
     setIsOptimizing(true);
     try {
-      await onOptimize(apiKey);
+      await onOptimize(token);
       setHasOptimized(true);
       toast.success('Keywords optimized successfully!');
     } catch (error) {
@@ -44,9 +44,10 @@ const KeywordOptimizer: React.FC<KeywordOptimizerProps> = ({ onOptimize }) => {
     }
   };
 
-  const handleApiKeySave = async (apiKey: string) => {
-    localStorage.setItem('google_keyword_api_key', apiKey);
+  const handleTokenSave = async (token: string) => {
+    localStorage.setItem('developer_token', token);
     setIsApiModalOpen(false);
+    toast.success('Developer token saved');
     runOptimization();
   };
 
@@ -78,7 +79,7 @@ const KeywordOptimizer: React.FC<KeywordOptimizerProps> = ({ onOptimize }) => {
       <KeywordApiModal 
         isOpen={isApiModalOpen}
         onClose={() => setIsApiModalOpen(false)}
-        onSave={handleApiKeySave}
+        onSave={handleTokenSave}
       />
     </>
   );

@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { generateKeywords } from '@/utils/llmUtils';
+import { generateKeywords } from '@/utils/generators/keywordGenerator';
 import ApiKeyInput from '@/components/common/ApiKeyInput';
 import {
   Select,
@@ -153,8 +153,8 @@ const KeywordStep: React.FC<KeywordStepProps> = () => {
   };
 
   const handleGenerateKeywords = async () => {
-    if (!localStorage.getItem('openai_api_key')) {
-      toast.error('Please set your OpenAI API key first');
+    if (!localStorage.getItem('developer_token')) {
+      toast.error('Please set your Developer Token first');
       return;
     }
 
@@ -172,8 +172,8 @@ const KeywordStep: React.FC<KeywordStepProps> = () => {
   };
 
   const handleGenerateMoreKeywords = async () => {
-    if (!localStorage.getItem('openai_api_key')) {
-      toast.error('Please set your OpenAI API key first');
+    if (!localStorage.getItem('developer_token')) {
+      toast.error('Please set your Developer Token first');
       return;
     }
 
@@ -219,14 +219,14 @@ const KeywordStep: React.FC<KeywordStepProps> = () => {
     setCurrentStep(6);
   };
 
-  const handleOptimizeKeywords = async (apiKey: string) => {
+  const handleOptimizeKeywords = async (token: string) => {
     if (keywords.length === 0) {
       toast.error('No keywords to optimize');
       return;
     }
 
     try {
-      const optimizedStats = await optimizeKeywords(keywords, apiKey);
+      const optimizedStats = await optimizeKeywords(keywords, token);
       setKeywordStats(optimizedStats);
       toast.success('Keywords optimized successfully!');
     } catch (error) {
@@ -247,14 +247,14 @@ const KeywordStep: React.FC<KeywordStepProps> = () => {
         setSelectedKeywordStats(existingStat);
       } else {
         // If not, fetch new stats
-        const apiKey = localStorage.getItem('google_keyword_api_key');
-        if (!apiKey) {
-          toast.error('Please set your Google Keyword API key first');
+        const token = localStorage.getItem('developer_token');
+        if (!token) {
+          toast.error('Please set your Developer Token first');
           setIsLoadingStats(false);
           return;
         }
         
-        const stats = await fetchKeywordStats(keyword, apiKey);
+        const stats = await fetchKeywordStats(keyword, token);
         // Fix the type mismatch
         const updatedStats = [...keywordStats, stats];
         setKeywordStats(updatedStats);
@@ -272,13 +272,13 @@ const KeywordStep: React.FC<KeywordStepProps> = () => {
     if (!selectedKeywordStats) return;
     
     try {
-      const apiKey = localStorage.getItem('google_keyword_api_key');
-      if (!apiKey) {
-        toast.error('Please set your Google Keyword API key first');
+      const token = localStorage.getItem('developer_token');
+      if (!token) {
+        toast.error('Please set your Developer Token first');
         return;
       }
       
-      const newSynonyms = await generateMoreSynonyms(selectedKeywordStats.term, apiKey);
+      const newSynonyms = await generateMoreSynonyms(selectedKeywordStats.term, token);
       
       // Update the selected keyword stats with new synonyms
       const updatedStats = {
@@ -318,7 +318,7 @@ const KeywordStep: React.FC<KeywordStepProps> = () => {
           </CardHeader>
           <CardContent>
             <p className="text-gray-600 mb-4">
-              Our AI will generate a list of 15 keywords tailored to your business and target audience.
+              Our system will generate a list of keywords tailored to your business and target audience using Manager Customer ID: <span className="font-mono">981-519-4690</span>
             </p>
             <div className="flex justify-between items-center">
               <Button 
