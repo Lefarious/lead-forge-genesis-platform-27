@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -35,11 +34,7 @@ const AddUSPDialog: React.FC<AddUSPDialogProps> = ({ isOpen, onOpenChange, icps,
 
   const handleAddCustomUSP = () => {
     if (!newUSP.title || !newUSP.description || !newUSP.targetICP || !newUSP.valueProposition) {
-      toast({
-        title: "Error",
-        description: "Please fill all fields",
-        variant: "destructive"
-      });
+      toast.error("Please fill all fields");
       return;
     }
 
@@ -51,10 +46,7 @@ const AddUSPDialog: React.FC<AddUSPDialogProps> = ({ isOpen, onOpenChange, icps,
       targetICP: icps.length > 0 ? icps[0].title : '',
       valueProposition: ''
     });
-    toast({
-      title: "Success",
-      description: "Custom USP added successfully"
-    });
+    toast.success("Custom USP added successfully");
   };
 
   return (
