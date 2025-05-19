@@ -4,6 +4,7 @@ export const callOpenAI = async (messages: any[], options: {
   model?: string;
   temperature?: number;
   maxTokens?: number;
+  signal?: AbortSignal;
 } = {}): Promise<any> => {
   const apiKey = localStorage.getItem('openai_api_key');
   if (!apiKey) {
@@ -28,7 +29,8 @@ export const callOpenAI = async (messages: any[], options: {
       response_format: {
         'type': 'json_object'
       }
-    })
+    }),
+    signal: options.signal
   });
 
   if (!response.ok) {
