@@ -69,30 +69,56 @@ export const generateICPs = async (business: any, existingICPs: any[] = []): Pro
       // Filter out any ICPs that duplicate existing ones
       icps = icps.filter(icp => !existingTitles.includes((icp.title || '').toLowerCase()));
       
-      // Format the ICPs into our standard structure
-      return icps.map((icp: any, index: number) => ({
-        id: `gen-icp-${Date.now()}-${index}`,
-        title: icp.title,
-        description: icp.description,
-        demographics: typeof icp.demographics === 'string' ? 
-          icp.demographics : 
-          JSON.stringify(icp.demographics || {}),
-        blueOceanScore: icp.blueOceanScore || 5,
-        reachMethods: Array.isArray(icp.reachMethods) ? 
-          icp.reachMethods : 
-          [icp.reachMethods || ""],
-        productSuggestions: Array.isArray(icp.productSuggestions) ? 
-          icp.productSuggestions : 
-          [icp.productSuggestions || ""],
-        painPoints: Array.isArray(icp.painPoints) ? 
-          icp.painPoints : 
-          [icp.painPoints || ""],
-        goals: Array.isArray(icp.goals) ? 
-          icp.goals : 
-          [icp.goals || ""],
-        isCustomAdded: false
-      }));
-    } catch (error) {
+      // Ensure all fields are properly formatted for each ICP
+      return icps.map((icp: any, index: number) => {
+        // Ensure painPoints is always an array with values
+        const painPoints = icp.painpoints || icp.painPoints || [];
+        const formattedPainPoints = Array.isArray(painPoints) ? 
+          painPoints.filter((item: any) => item && item.trim() !== '') : 
+          [painPoints].filter((item: any) => item && item.toString().trim() !== '');
+        
+        // Ensure goals is always an array with values
+        const goals = icp.goals || [];
+        const formattedGoals = Array.isArray(goals) ? 
+          goals.filter((item: any) => item && item.trim() !== '') : 
+          [goals].filter((item: any) => item && item.toString().trim() !== '');
+        
+        // Ensure reachMethods is always an array with values
+        const reachMethods = icp.reachmethods || icp.reachMethods || [];
+        const formattedReachMethods = Array.isArray(reachMethods) ? 
+          reachMethods.filter((item: any) => item && item.trim() !== '') : 
+          [reachMethods].filter((item: any) => item && item.toString().trim() !== '');
+        
+        // Ensure productSuggestions is always an array with values
+        const productSuggestions = icp.productsuggestions || icp.productSuggestions || [];
+        const formattedProductSuggestions = Array.isArray(productSuggestions) ? 
+          productSuggestions.filter((item: any) => item && item.trim() !== '') : 
+          [productSuggestions].filter((item: any) => item && item.toString().trim() !== '');
+        
+        // Ensure blueOceanScore is a number between 1 and 10
+        let blueOceanScore = parseInt(icp.blueoceanScore || icp.blueOceanScore || '5');
+        blueOceanScore = isNaN(blueOceanScore) ? 5 : Math.min(10, Math.max(1, blueOceanScore));
+
+        // Format demographics consistently
+        let demographics = icp.demographics || {};
+        if (typeof demographics !== 'string') {
+          demographics = JSON.stringify(demographics);
+        }
+
+        return {
+          id: `gen-icp-${Date.now()}-${index}`,
+          title: icp.title || `Customer Profile ${index + 1}`,
+          description: icp.description || "",
+          demographics: demographics,
+          blueOceanScore: blueOceanScore,
+          reachMethods: formattedReachMethods.length > 0 ? formattedReachMethods : ["Not specified"],
+          productSuggestions: formattedProductSuggestions.length > 0 ? formattedProductSuggestions : ["Not specified"],
+          painPoints: formattedPainPoints.length > 0 ? formattedPainPoints : ["Not specified"],
+          goals: formattedGoals.length > 0 ? formattedGoals : ["Not specified"],
+          isCustomAdded: false
+        };
+      });
+    } catch (error: any) {
       // Make sure to clear the timeout to avoid memory leaks
       clearTimeout(timeoutId);
       
