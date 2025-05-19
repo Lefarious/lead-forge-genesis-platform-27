@@ -16,7 +16,7 @@ import { Plus, Trash } from 'lucide-react';
  * including name, industry, description, and main problem solved.
  */
 const BusinessInfoStep: React.FC = () => {
-  const { business, setBusinessInfo, setCurrentStep } = useMarketingTool();
+  const { business, setBusinessInfo, setCurrentStep, resetDataForStep } = useMarketingTool();
   
   // Form state management
   const [formData, setFormData] = useState({
@@ -75,6 +75,9 @@ const BusinessInfoStep: React.FC = () => {
       return;
     }
 
+    // Reset any existing data first to ensure fresh generation in the next steps
+    resetDataForStep(2);
+    
     // Pass the form data to setBusinessInfo
     setBusinessInfo({
       ...formData,

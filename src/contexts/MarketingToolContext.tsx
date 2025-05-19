@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { KeywordStats } from '@/components/keywords/KeywordDataVisualizer';
@@ -184,6 +185,7 @@ export interface MarketingToolContextType {
   publishContent: (id: string, publishLink?: string) => void;
   landingPage: LandingPage;
   updateLandingPage: (updates: Partial<LandingPage>) => void;
+  resetDataForStep: (step: number) => void;
 }
 
 export const MarketingToolContext = createContext<MarketingToolContextType | undefined>(undefined);
@@ -207,6 +209,55 @@ export const MarketingToolProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     loadFromLocalStorage();
   }, []);
+
+  // New function to reset data based on which step the user is moving to
+  const resetDataForStep = (step: number) => {
+    // Reset data for upcoming step
+    switch(step) {
+      case 2: // Moving to ICP step
+        setIcps([]);
+        // Also reset downstream data
+        setUsps([]);
+        setGeographies([]);
+        setKeywords([]);
+        setContentIdeas([]);
+        break;
+      case 3: // Moving to USP step
+        setUsps([]);
+        // Also reset downstream data
+        setGeographies([]);
+        setKeywords([]);
+        setContentIdeas([]);
+        break;
+      case 4: // Moving to Geography step
+        setGeographies([]);
+        // Also reset downstream data
+        setKeywords([]);
+        setContentIdeas([]);
+        break;
+      case 5: // Moving to Keyword step
+        setKeywords([]);
+        setKeywordStats([]);
+        setSelectedKeywordStats(null);
+        // Also reset downstream data
+        setContentIdeas([]);
+        break;
+      case 6: // Moving to Content step
+        setContentIdeas([]);
+        break;
+      case 7: // Moving to Publish step
+        // No need to reset anything for publish step
+        break;
+      default:
+        break;
+    }
+  };
+
+  // Modify setCurrentStep to include data reset
+  const handleSetCurrentStep = (step: number) => {
+    resetDataForStep(step);
+    setCurrentStep(step);
+  };
 
   const addCompetitor = (competitor: Omit<Competitor, 'id'>) => {
     const newCompetitor: Competitor = { ...competitor, id: uuidv4() };
@@ -431,7 +482,7 @@ export const MarketingToolProvider: React.FC<{ children: React.ReactNode }> = ({
     updatePublishedContent,
     deletePublishedContent,
     currentStep,
-    setCurrentStep,
+    setCurrentStep: handleSetCurrentStep,
     isGenerating,
     setIsGenerating,
     isStorageLoaded,
@@ -450,6 +501,7 @@ export const MarketingToolProvider: React.FC<{ children: React.ReactNode }> = ({
     publishContent,
     landingPage,
     updateLandingPage,
+    resetDataForStep
   };
 
   return (

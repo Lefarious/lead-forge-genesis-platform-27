@@ -15,17 +15,21 @@ console.log('Loading Index.tsx');
 const StepRenderer: React.FC = () => {
   try {
     console.log('Rendering StepRenderer component');
-    const { currentStep } = useMarketingTool();
+    const { currentStep, resetDataForStep } = useMarketingTool();
     console.log('Current step:', currentStep);
     
     // Track visited steps but don't auto-generate anymore
     const visitedSteps = useRef<Set<number>>(new Set([1])); // Consider first step as visited
 
-    // Add to visited steps when step is rendered
+    // Add to visited steps when step is rendered and reset relevant data
     useEffect(() => {
       console.log('StepRenderer useEffect, updating visited steps');
+      if (!visitedSteps.current.has(currentStep)) {
+        // Only reset data when navigating to a new step for the first time
+        resetDataForStep(currentStep);
+      }
       visitedSteps.current.add(currentStep);
-    }, [currentStep]);
+    }, [currentStep, resetDataForStep]);
 
     const renderStep = () => {
       console.log('Rendering step:', currentStep);
