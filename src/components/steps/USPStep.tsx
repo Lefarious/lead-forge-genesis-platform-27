@@ -99,15 +99,15 @@ const USPStep: React.FC = () => {
         />
       ) : (
         <>
+          <USPList usps={usps} business={business} />
+          
           <USPGenerationControls
             isGenerating={isGenerating}
             onGenerateMore={handleGenerateMoreUSPs}
             onAddCustomClick={() => setIsAddDialogOpen(true)}
           />
           
-          <USPList usps={usps} business={business} />
-          
-          <div className="flex justify-between">
+          <div className="flex justify-between mt-8">
             <Button variant="outline" onClick={() => setCurrentStep(2)}>
               Back
             </Button>

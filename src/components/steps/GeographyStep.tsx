@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,36 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
     brandPersonality: ''
   });
 
+  // Helper function to standardize market size
+  const standardizeMarketSize = (marketSize: string) => {
+    if (!marketSize) return '';
+    
+    // Convert market size to standardized format
+    const cleanedValue = marketSize.replace(/[^\d.]/g, '');
+    const numValue = parseFloat(cleanedValue);
+    
+    if (isNaN(numValue)) return marketSize;
+    
+    if (marketSize.toLowerCase().includes('billion') || marketSize.toLowerCase().includes('b')) {
+      return `${numValue}B`;
+    } else if (marketSize.toLowerCase().includes('million') || marketSize.toLowerCase().includes('m')) {
+      return `${numValue}M`;
+    } else if (marketSize.toLowerCase().includes('thousand') || marketSize.toLowerCase().includes('k')) {
+      return `${numValue}K`;
+    }
+    
+    // If the number is large enough, convert to appropriate unit
+    if (numValue >= 1_000_000_000) {
+      return `${(numValue / 1_000_000_000).toFixed(1)}B`;
+    } else if (numValue >= 1_000_000) {
+      return `${(numValue / 1_000_000).toFixed(1)}M`;
+    } else if (numValue >= 1_000) {
+      return `${(numValue / 1_000).toFixed(1)}K`;
+    }
+    
+    return marketSize;
+  };
+
   // Helper function for profitability rating color
   const getProfitabilityColor = (rating: string) => {
     switch (rating?.toLowerCase()) {
@@ -37,6 +68,20 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
       case 'medium':
         return 'text-yellow-600';
       case 'low':
+        return 'text-red-600';
+      default:
+        return 'text-gray-600';
+    }
+  };
+  
+  // Helper function for competition level color
+  const getCompetitionColor = (level: string) => {
+    switch (level?.toLowerCase()) {
+      case 'low':
+        return 'text-green-600';
+      case 'medium':
+        return 'text-yellow-600';
+      case 'high':
         return 'text-red-600';
       default:
         return 'text-gray-600';
@@ -152,7 +197,7 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
                   <MapPin className="h-6 w-6 text-marketing-600" />
                   <div>
                     <CardTitle className="text-xl">{geo.region}</CardTitle>
-                    <CardDescription>Market Size: {geo.marketSize}</CardDescription>
+                    <CardDescription>Market Size: {standardizeMarketSize(geo.marketSize)}</CardDescription>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -164,20 +209,9 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
                     <div>
                       <span className="font-medium">Competition:</span>
                     </div>
-                    <div>{geo.competitionLevel}</div>
-                    
-                    {/* New fields */}
-                    <div>
-                      <span className="font-medium">Profitability:</span>
+                    <div className={getCompetitionColor(geo.competitionLevel)}>
+                      {geo.competitionLevel}
                     </div>
-                    <div className={getProfitabilityColor(geo.profitabilityRating)}>
-                      {geo.profitabilityRating || 'Not specified'}
-                    </div>
-                    
-                    <div>
-                      <span className="font-medium">Pricing Power:</span>
-                    </div>
-                    <div>{geo.pricingPower || 'Not specified'}</div>
                   </div>
                   
                   {/* Why Target This Geography Section */}
@@ -205,7 +239,7 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
                     <p className="text-sm text-gray-700">{geo.recommendation}</p>
                   </div>
                   
-                  {/* Market Metrics Section - New */}
+                  {/* Market Metrics Section - Consolidated */}
                   <div className="bg-green-50 p-3 rounded-md">
                     <h4 className="font-medium text-sm mb-1 text-green-700">
                       <span className="flex items-center gap-1">
@@ -297,7 +331,7 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
                 value={newGeography.marketSize}
                 onChange={(e) => setNewGeography({ ...newGeography, marketSize: e.target.value })}
                 className="col-span-3"
-                placeholder="e.g., $5B annually"
+                placeholder="e.g., 5M, 2.5B, 500K"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -321,7 +355,7 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
                 value={newGeography.competitionLevel}
                 onChange={(e) => setNewGeography({ ...newGeography, competitionLevel: e.target.value })}
                 className="col-span-3"
-                placeholder="e.g., Medium"
+                placeholder="e.g., Medium, Low, High"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -349,7 +383,7 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
               />
             </div>
             
-            {/* New form fields */}
+            {/* Form fields */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="profitabilityRating" className="text-right">
                 Profitability
