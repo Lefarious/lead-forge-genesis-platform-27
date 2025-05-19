@@ -1,30 +1,27 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/use-toast';
-import { Loader2, Plus, RefreshCw } from 'lucide-react';
-import { USP } from '@/contexts/MarketingToolContext';
 import { generateUSPs } from '@/utils/llmUtils';
-import ApiKeyInput from '@/components/common/ApiKeyInput';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import CompetitiveAnalysis from '@/components/usps/CompetitiveAnalysis';
+import EmptyUSPState from '@/components/usps/EmptyUSPState';
+import USPGenerationControls from '@/components/usps/USPGenerationControls';
+import USPList from '@/components/usps/USPList';
+import AddUSPDialog from '@/components/usps/AddUSPDialog';
 
-interface USPStepProps {}
-
-const USPStep: React.FC<USPStepProps> = () => {
-  const { business, icps, usps, setUSPs, setCurrentStep, isGenerating, setIsGenerating, addCustomUSP } = useMarketingTool();
+const USPStep: React.FC = () => {
+  const { 
+    business, 
+    icps, 
+    usps, 
+    setUSPs, 
+    setCurrentStep, 
+    isGenerating, 
+    setIsGenerating, 
+    addCustomUSP 
+  } = useMarketingTool();
+  
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newUSP, setNewUSP] = useState<Partial<USP>>({
-    title: '',
-    description: '',
-    targetICP: icps.length > 0 ? icps[0].title : '',
-    valueProposition: ''
-  });
-  const [expandedUSP, setExpandedUSP] = useState<string | null>(null);
 
   const handleGenerateUSPs = async () => {
     if (!localStorage.getItem('openai_api_key')) {
@@ -58,7 +55,7 @@ const USPStep: React.FC<USPStepProps> = () => {
 
     setIsGenerating(true);
     try {
-      // Pass existing USPs to ensure we get unique ones, and generate 3 new ones
+      // Pass existing USPs to ensure we get unique ones
       const moreUSPs = await generateUSPs(business, icps, usps);
       setUSPs([...usps, ...moreUSPs]);
       toast.success('Additional USPs generated!');
@@ -70,21 +67,13 @@ const USPStep: React.FC<USPStepProps> = () => {
     }
   };
 
-  const handleAddCustomUSP = () => {
-    if (!newUSP.title || !newUSP.description || !newUSP.targetICP || !newUSP.valueProposition) {
-      toast.error('Please fill all fields');
-      return;
-    }
-
-    addCustomUSP(newUSP as USP);
-    setIsAddDialogOpen(false);
-    setNewUSP({
-      title: '',
-      description: '',
-      targetICP: icps.length > 0 ? icps[0].title : '',
-      valueProposition: ''
-    });
-    toast.success('Custom USP added successfully');
+  const handleAddCustomUSP = (newUSP: {
+    title: string;
+    description: string;
+    targetICP: string;
+    valueProposition: string;
+  }) => {
+    addCustomUSP(newUSP);
   };
 
   const handleContinue = () => {
@@ -103,89 +92,20 @@ const USPStep: React.FC<USPStepProps> = () => {
       </p>
 
       {usps.length === 0 ? (
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Generate USPs</CardTitle>
-            <CardDescription>
-              We'll analyze your business and ICPs to identify compelling selling points
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-600 mb-4">
-              Our AI will generate unique selling points tailored to each of your ideal customer profiles.
-            </p>
-            <div className="flex justify-between items-center">
-              <Button 
-                onClick={() => setCurrentStep(2)} 
-                variant="outline"
-              >
-                Back to ICPs
-              </Button>
-              <div className="flex items-center gap-2">
-                <ApiKeyInput />
-                <Button 
-                  onClick={handleGenerateUSPs} 
-                  className="bg-marketing-600 hover:bg-marketing-700 transition-colors"
-                  disabled={isGenerating}
-                >
-                  {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Generate USPs
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <EmptyUSPState 
+          isGenerating={isGenerating} 
+          onBack={() => setCurrentStep(2)} 
+          onGenerate={handleGenerateUSPs} 
+        />
       ) : (
         <>
-          {/* Generation control buttons - moved to the top */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            <Button 
-              variant="outline"
-              className="border-dashed border-2 border-gray-300 hover:border-marketing-400 flex flex-col items-center justify-center min-h-[200px] p-6"
-              onClick={handleGenerateMoreUSPs}
-              disabled={isGenerating}
-            >
-              {isGenerating ? (
-                <Loader2 className="h-12 w-12 text-gray-400 mb-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-12 w-12 text-gray-400 mb-4" />
-              )}
-              <p className="text-gray-600 font-medium">Generate More USPs</p>
-            </Button>
-            
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Card className="border-dashed border-2 border-gray-300 hover:border-marketing-400 cursor-pointer flex flex-col items-center justify-center min-h-[200px]">
-                  <CardContent className="flex flex-col items-center justify-center p-6">
-                    <Plus className="h-12 w-12 text-gray-400 mb-4" />
-                    <p className="text-gray-600 font-medium">Add Custom USP</p>
-                  </CardContent>
-                </Card>
-              </DialogTrigger>
-            </Dialog>
-          </div>
+          <USPGenerationControls
+            isGenerating={isGenerating}
+            onGenerateMore={handleGenerateMoreUSPs}
+            onAddCustomClick={() => setIsAddDialogOpen(true)}
+          />
           
-          <div className="grid grid-cols-1 gap-6 mb-8">
-            {usps.map((usp) => (
-              <Card key={usp.id} className={usp.isCustomAdded ? "border-marketing-300 bg-marketing-50/30" : ""}>
-                <CardHeader>
-                  <CardTitle className="text-xl">{usp.title}</CardTitle>
-                  <CardDescription>Target: {usp.targetICP || "Not specified"}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <p className="text-gray-600">{usp.description}</p>
-                  </div>
-                  <div className="bg-marketing-50 p-3 rounded-md">
-                    <h4 className="font-medium text-sm mb-1 text-marketing-700">Value Proposition:</h4>
-                    <p className="text-sm text-gray-700">{usp.valueProposition || "Not specified"}</p>
-                  </div>
-                  
-                  <CompetitiveAnalysis business={business} usp={usp} />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <USPList usps={usps} business={business} />
           
           <div className="flex justify-between">
             <Button variant="outline" onClick={() => setCurrentStep(2)}>
@@ -201,77 +121,12 @@ const USPStep: React.FC<USPStepProps> = () => {
         </>
       )}
 
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[550px]">
-          <DialogHeader>
-            <DialogTitle>Add Custom Unique Selling Point</DialogTitle>
-            <DialogDescription>
-              Create a custom USP for your marketing strategy.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="title" className="text-right">
-                Title
-              </Label>
-              <Input
-                id="title"
-                value={newUSP.title}
-                onChange={(e) => setNewUSP({ ...newUSP, title: e.target.value })}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="targetICP" className="text-right">
-                Target ICP
-              </Label>
-              <select
-                id="targetICP"
-                value={newUSP.targetICP}
-                onChange={(e) => setNewUSP({ ...newUSP, targetICP: e.target.value })}
-                className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {icps.map((icp) => (
-                  <option key={icp.id} value={icp.title}>{icp.title}</option>
-                ))}
-              </select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
-                Description
-              </Label>
-              <Textarea
-                id="description"
-                value={newUSP.description}
-                onChange={(e) => setNewUSP({ ...newUSP, description: e.target.value })}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="valueProposition" className="text-right">
-                Value Proposition
-              </Label>
-              <Textarea
-                id="valueProposition"
-                value={newUSP.valueProposition}
-                onChange={(e) => setNewUSP({ ...newUSP, valueProposition: e.target.value })}
-                className="col-span-3"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleAddCustomUSP}
-              className="bg-marketing-600 hover:bg-marketing-700 transition-colors"
-            >
-              Add USP
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AddUSPDialog 
+        isOpen={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        icps={icps}
+        onAddUSP={handleAddCustomUSP}
+      />
     </div>
   );
 };
