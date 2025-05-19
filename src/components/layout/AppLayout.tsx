@@ -108,7 +108,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 };
 
 const steps = [
-  "Business Info",
+  "\n Business Info",
   "ICPs",
   "USPs",
   "Geographies",
