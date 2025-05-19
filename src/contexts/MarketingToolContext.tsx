@@ -210,40 +210,48 @@ export const MarketingToolProvider: React.FC<{ children: React.ReactNode }> = ({
     loadFromLocalStorage();
   }, []);
 
-  // New function to reset data based on which step the user is moving to
+  // Modified function to prevent data loss when navigating between steps
   const resetDataForStep = (step: number) => {
-    // Reset data for upcoming step
+    // We're only clearing data for newly reaching steps that haven't been populated yet
+    // This preserves data when navigating back and forth
     switch(step) {
       case 2: // Moving to ICP step
-        setIcps([]);
-        // Also reset downstream data
-        setUsps([]);
-        setGeographies([]);
-        setKeywords([]);
-        setContentIdeas([]);
+        // Only reset if we don't have ICPs yet
+        if (icps.length === 0) {
+          setUsps([]);
+          setGeographies([]);
+          setKeywords([]);
+          setContentIdeas([]);
+        }
         break;
       case 3: // Moving to USP step
-        setUsps([]);
-        // Also reset downstream data
-        setGeographies([]);
-        setKeywords([]);
-        setContentIdeas([]);
+        // Only reset if we don't have USPs yet
+        if (usps.length === 0) {
+          setGeographies([]);
+          setKeywords([]);
+          setContentIdeas([]);
+        }
         break;
       case 4: // Moving to Geography step
-        setGeographies([]);
-        // Also reset downstream data
-        setKeywords([]);
-        setContentIdeas([]);
+        // Only reset if we don't have Geographies yet
+        if (geographies.length === 0) {
+          setKeywords([]);
+          setContentIdeas([]);
+        }
         break;
       case 5: // Moving to Keyword step
-        setKeywords([]);
-        setKeywordStats([]);
-        setSelectedKeywordStats(null);
-        // Also reset downstream data
-        setContentIdeas([]);
+        // Only reset if we don't have Keywords yet
+        if (keywords.length === 0) {
+          setKeywordStats([]);
+          setSelectedKeywordStats(null);
+          setContentIdeas([]);
+        }
         break;
       case 6: // Moving to Content step
-        setContentIdeas([]);
+        // Only reset if we don't have Content ideas yet
+        if (contentIdeas.length === 0) {
+          // No need to reset anything else
+        }
         break;
       case 7: // Moving to Publish step
         // No need to reset anything for publish step
