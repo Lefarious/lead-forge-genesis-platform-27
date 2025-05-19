@@ -94,9 +94,9 @@ const BusinessInfoStep: React.FC = () => {
 
   return (
     <div className="container py-8 max-w-3xl animate-fade-in">
-      <h1 className="text-3xl font-bold text-center mb-8">Tell us about your business</h1>
+      <h1 className="text-3xl font-bold text-center mb-2">Tell us about your business</h1>
       <p className="text-center text-gray-600 mb-8">
-        We'll use this information to generate targeted marketing research
+        We'll use this <span className="font-medium">business</span> information to generate targeted marketing research
       </p>
       
       <Card>
