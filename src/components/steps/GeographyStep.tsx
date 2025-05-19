@@ -11,15 +11,15 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import MarketAnalysis from '@/components/geographies/MarketAnalysis';
 import { standardizeMarketSize } from '@/utils/formatters/marketSizeFormatter';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface GeographyStepProps {}
 
 const GeographyStep: React.FC<GeographyStepProps> = () => {
   const { business, geographies, setGeographies, addCustomGeography, setCurrentStep, isGenerating, setIsGenerating } = useMarketingTool();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [selectedGeoId, setSelectedGeoId] = useState<string | null>(null);
+  const { isDarkMode } = useTheme();
   const [newGeography, setNewGeography] = useState<Partial<Geography>>({
     region: '',
     marketSize: '',
@@ -36,13 +36,13 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
   const getProfitabilityColor = (rating: string) => {
     switch (rating?.toLowerCase()) {
       case 'high':
-        return 'text-green-600';
+        return isDarkMode ? 'text-green-400' : 'text-green-600';
       case 'medium':
-        return 'text-yellow-600';
+        return isDarkMode ? 'text-yellow-400' : 'text-yellow-600';
       case 'low':
-        return 'text-red-600';
+        return isDarkMode ? 'text-red-400' : 'text-red-600';
       default:
-        return 'text-gray-600';
+        return isDarkMode ? 'text-gray-400' : 'text-gray-600';
     }
   };
   
@@ -50,13 +50,13 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
   const getCompetitionColor = (level: string) => {
     switch (level?.toLowerCase()) {
       case 'low':
-        return 'text-green-600';
+        return isDarkMode ? 'text-green-400' : 'text-green-600';
       case 'medium':
-        return 'text-yellow-600';
+        return isDarkMode ? 'text-yellow-400' : 'text-yellow-600';
       case 'high':
-        return 'text-red-600';
+        return isDarkMode ? 'text-red-400' : 'text-red-600';
       default:
-        return 'text-gray-600';
+        return isDarkMode ? 'text-gray-400' : 'text-gray-600';
     }
   };
 
@@ -128,20 +128,10 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
     setCurrentStep(5);
   };
 
-  const selectGeography = (id: string) => {
-    if (selectedGeoId === id) {
-      setSelectedGeoId(null);
-    } else {
-      setSelectedGeoId(id);
-    }
-  };
-
-  const selectedGeography = geographies.find(geo => geo.id === selectedGeoId);
-
   return (
     <div className="container py-8 animate-fade-in">
       <h1 className="text-3xl font-bold text-center mb-2">Target Geographies</h1>
-      <p className="text-center text-gray-600 mb-8">
+      <p className={`text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-8`}>
         Identify the most promising countries for your business expansion
       </p>
 
@@ -154,7 +144,7 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-600 mb-4">
+            <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-4`}>
               Our AI will identify promising countries based on market size, growth potential, and competition level.
             </p>
             <div className="flex justify-between items-center">
@@ -180,25 +170,22 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
         </Card>
       ) : (
         <>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <div className="lg:col-span-2">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {geographies.map((geo) => (
-                  <Card 
-                    key={geo.id} 
-                    className={`${geo.isCustomAdded ? "border-marketing-300 bg-marketing-50/30" : ""} 
-                               ${selectedGeoId === geo.id ? "ring-2 ring-marketing-500" : ""} 
-                               cursor-pointer`}
-                    onClick={() => selectGeography(geo.id)}
-                  >
-                    <CardHeader className="flex flex-row items-center gap-3">
-                      <MapPin className="h-6 w-6 text-marketing-600" />
-                      <div>
-                        <CardTitle className="text-xl">{geo.region}</CardTitle>
-                        <CardDescription>Market Size: {standardizeMarketSize(geo.marketSize)}</CardDescription>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 gap-6 mb-8">
+            {geographies.map((geo) => (
+              <Card 
+                key={geo.id} 
+                className={`${geo.isCustomAdded ? `border-marketing-300 ${isDarkMode ? 'bg-gray-800/30' : 'bg-marketing-50/30'}` : ""}`}
+              >
+                <CardHeader className="flex flex-row items-center gap-3">
+                  <MapPin className="h-6 w-6 text-marketing-600 dark:text-marketing-400" />
+                  <div>
+                    <CardTitle className="text-xl">{geo.region}</CardTitle>
+                    <CardDescription>Market Size: {standardizeMarketSize(geo.marketSize)}</CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-4">
                       <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                         <div>
                           <span className="font-medium">Growth Rate:</span>
@@ -210,116 +197,81 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
                         <div className={getCompetitionColor(geo.competitionLevel)}>
                           {geo.competitionLevel}
                         </div>
+                        <div>
+                          <span className="font-medium">Pricing Power:</span>
+                        </div>
+                        <div>{geo.pricingPower || 'Not specified'}</div>
+                        <div>
+                          <span className="font-medium">Profitability:</span>
+                        </div>
+                        <div className={getProfitabilityColor(geo.profitabilityRating)}>
+                          {geo.profitabilityRating || 'Not specified'}
+                        </div>
                       </div>
-                      
+                    </div>
+                    
+                    <div className="space-y-4 md:col-span-2">
                       {/* Why Target This Geography Section */}
                       {geo.whyTarget && (
-                        <div className="bg-marketing-50 p-3 rounded-md">
-                          <h4 className="font-medium text-sm mb-1 text-marketing-700">Why Target:</h4>
-                          <p className="text-sm text-gray-700">{geo.whyTarget}</p>
+                        <div className={`${isDarkMode ? 'bg-gray-800/50' : 'bg-marketing-50'} p-3 rounded-md`}>
+                          <h4 className={`font-medium text-sm mb-1 ${isDarkMode ? 'text-marketing-400' : 'text-marketing-700'}`}>Why Target:</h4>
+                          <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{geo.whyTarget}</p>
                         </div>
                       )}
                       
-                      {/* Market Metrics Section - Combined */}
-                      <div className="bg-green-50 p-3 rounded-md">
-                        <h4 className="font-medium text-sm mb-1 text-green-700">
-                          <span className="flex items-center gap-1">
-                            <TrendingUp className="h-4 w-4" /> Market Metrics
-                          </span>
+                      {/* Combined Recommendation & Brand Personality */}
+                      <div className={`${isDarkMode ? 'bg-blue-900/20' : 'bg-blue-50'} p-3 rounded-md`}>
+                        <h4 className={`font-medium text-sm mb-1 ${isDarkMode ? 'text-blue-400' : 'text-blue-700'}`}>
+                          Strategic Insights:
                         </h4>
-                        <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-sm mt-1">
-                          <div>Pricing Power:</div>
-                          <div>{geo.pricingPower || 'Not specified'}</div>
-                          <div>Profitability:</div>
-                          <div className={getProfitabilityColor(geo.profitabilityRating)}>
-                            {geo.profitabilityRating || 'Not specified'}
-                          </div>
+                        <div className="space-y-2">
+                          {geo.recommendation && (
+                            <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              <span className="font-medium">Recommendation: </span>{geo.recommendation}
+                            </p>
+                          )}
+                          {geo.brandPersonality && (
+                            <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              <span className="font-medium">Brand Positioning: </span>{geo.brandPersonality}
+                            </p>
+                          )}
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                <Button 
-                  variant="outline"
-                  className="border-dashed border-2 border-gray-300 hover:border-marketing-400 flex flex-col items-center justify-center min-h-[120px] p-6"
-                  onClick={handleGenerateGeographies}
-                  disabled={isGenerating}
-                >
-                  {isGenerating ? (
-                    <Loader2 className="h-8 w-8 text-gray-400 mb-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="h-8 w-8 text-gray-400 mb-4" />
-                  )}
-                  <p className="text-gray-600 font-medium">Generate More Countries</p>
-                </Button>
-                
-                <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Card className="border-dashed border-2 border-gray-300 hover:border-marketing-400 cursor-pointer flex flex-col items-center justify-center min-h-[120px]">
-                      <CardContent className="flex flex-col items-center justify-center p-6">
-                        <Plus className="h-8 w-8 text-gray-400 mb-4" />
-                        <p className="text-gray-600 font-medium">Add Custom Country</p>
-                      </CardContent>
-                    </Card>
-                  </DialogTrigger>
-                </Dialog>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              {selectedGeography ? (
-                <>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Market Details: {selectedGeography.region}</CardTitle>
-                      <CardDescription>
-                        Detailed information about this market
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <h3 className="font-semibold text-marketing-700 mb-2">Recommendation:</h3>
-                        <p className="text-sm text-gray-700">{selectedGeography.recommendation}</p>
-                      </div>
-                      
-                      {selectedGeography.brandPersonality && (
-                        <div>
-                          <h3 className="font-semibold text-blue-700 flex items-center gap-1 mb-2">
-                            <BadgePercent className="h-4 w-4" /> Brand Personality:
-                          </h3>
-                          <p className="text-sm text-gray-700">{selectedGeography.brandPersonality}</p>
-                        </div>
-                      )}
-                      
-                      <MarketAnalysis 
-                        business={business} 
-                        geography={selectedGeography}
-                      />
-                    </CardContent>
-                  </Card>
-                </>
-              ) : (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Select a Geography</CardTitle>
-                    <CardDescription>
-                      Click on any country to view detailed market insights
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-center text-gray-500 py-6">
-                      Select a geography card to analyze market details
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
           
-          <div className="flex justify-between">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <Button 
+              variant="outline"
+              className="border-dashed border-2 border-gray-300 hover:border-marketing-400 flex flex-col items-center justify-center min-h-[120px] p-6"
+              onClick={handleGenerateGeographies}
+              disabled={isGenerating}
+            >
+              {isGenerating ? (
+                <Loader2 className="h-8 w-8 text-gray-400 mb-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-8 w-8 text-gray-400 mb-4" />
+              )}
+              <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} font-medium`}>Generate More Countries</p>
+            </Button>
+            
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Card className={`border-dashed border-2 border-gray-300 hover:border-marketing-400 cursor-pointer flex flex-col items-center justify-center min-h-[120px] ${isDarkMode ? 'hover:bg-gray-800/30' : 'hover:bg-marketing-50/30'}`}>
+                  <CardContent className="flex flex-col items-center justify-center p-6">
+                    <Plus className="h-8 w-8 text-gray-400 mb-4" />
+                    <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} font-medium`}>Add Custom Country</p>
+                  </CardContent>
+                </Card>
+              </DialogTrigger>
+            </Dialog>
+          </div>
+          
+          <div className="flex justify-between mt-8">
             <Button variant="outline" onClick={() => setCurrentStep(3)}>
               Back
             </Button>
