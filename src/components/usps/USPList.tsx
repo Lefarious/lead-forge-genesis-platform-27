@@ -1,18 +1,25 @@
 
 import React from 'react';
-import { USP } from '@/contexts/MarketingToolContext';
 import USPCard from './USPCard';
+import { USP } from '@/contexts/MarketingToolContext';
 
 interface USPListProps {
   usps: USP[];
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
   business: any;
 }
 
-const USPList: React.FC<USPListProps> = ({ usps, business }) => {
+const USPList: React.FC<USPListProps> = ({ usps, onEdit, onDelete, business }) => {
   return (
-    <div className="grid grid-cols-1 gap-6 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {usps.map((usp) => (
-        <USPCard key={usp.id} usp={usp} business={business} />
+        <USPCard
+          key={usp.id}
+          usp={usp}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
       ))}
     </div>
   );
