@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
@@ -8,16 +7,19 @@ import { Loader2, MapPin, Plus, RefreshCw, TrendingUp, BadgePercent } from 'luci
 import { Geography } from '@/contexts/MarketingToolContext';
 import { generateGeographies } from '@/utils/llmUtils';
 import ApiKeyInput from '@/components/common/ApiKeyInput';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import MarketAnalysis from '@/components/geographies/MarketAnalysis';
+import { standardizeMarketSize } from '@/utils/formatters/marketSizeFormatter';
 
 interface GeographyStepProps {}
 
 const GeographyStep: React.FC<GeographyStepProps> = () => {
   const { business, geographies, setGeographies, addCustomGeography, setCurrentStep, isGenerating, setIsGenerating } = useMarketingTool();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [selectedGeoId, setSelectedGeoId] = useState<string | null>(null);
   const [newGeography, setNewGeography] = useState<Partial<Geography>>({
     region: '',
     marketSize: '',
@@ -29,36 +31,6 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
     pricingPower: '',
     brandPersonality: ''
   });
-
-  // Helper function to standardize market size
-  const standardizeMarketSize = (marketSize: string) => {
-    if (!marketSize) return '';
-    
-    // Convert market size to standardized format
-    const cleanedValue = marketSize.replace(/[^\d.]/g, '');
-    const numValue = parseFloat(cleanedValue);
-    
-    if (isNaN(numValue)) return marketSize;
-    
-    if (marketSize.toLowerCase().includes('billion') || marketSize.toLowerCase().includes('b')) {
-      return `${numValue}B`;
-    } else if (marketSize.toLowerCase().includes('million') || marketSize.toLowerCase().includes('m')) {
-      return `${numValue}M`;
-    } else if (marketSize.toLowerCase().includes('thousand') || marketSize.toLowerCase().includes('k')) {
-      return `${numValue}K`;
-    }
-    
-    // If the number is large enough, convert to appropriate unit
-    if (numValue >= 1_000_000_000) {
-      return `${(numValue / 1_000_000_000).toFixed(1)}B`;
-    } else if (numValue >= 1_000_000) {
-      return `${(numValue / 1_000_000).toFixed(1)}M`;
-    } else if (numValue >= 1_000) {
-      return `${(numValue / 1_000).toFixed(1)}K`;
-    }
-    
-    return marketSize;
-  };
 
   // Helper function for profitability rating color
   const getProfitabilityColor = (rating: string) => {
@@ -148,6 +120,16 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
     setCurrentStep(5);
   };
 
+  const selectGeography = (id: string) => {
+    if (selectedGeoId === id) {
+      setSelectedGeoId(null);
+    } else {
+      setSelectedGeoId(id);
+    }
+  };
+
+  const selectedGeography = geographies.find(geo => geo.id === selectedGeoId);
+
   return (
     <div className="container py-8 animate-fade-in">
       <h1 className="text-3xl font-bold text-center mb-2">Target Geographies</h1>
@@ -190,101 +172,143 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
         </Card>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            {geographies.map((geo) => (
-              <Card key={geo.id} className={geo.isCustomAdded ? "border-marketing-300 bg-marketing-50/30" : ""}>
-                <CardHeader className="flex flex-row items-center gap-3">
-                  <MapPin className="h-6 w-6 text-marketing-600" />
-                  <div>
-                    <CardTitle className="text-xl">{geo.region}</CardTitle>
-                    <CardDescription>Market Size: {standardizeMarketSize(geo.marketSize)}</CardDescription>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                    <div>
-                      <span className="font-medium">Growth Rate:</span>
-                    </div>
-                    <div>{geo.growthRate}</div>
-                    <div>
-                      <span className="font-medium">Competition:</span>
-                    </div>
-                    <div className={getCompetitionColor(geo.competitionLevel)}>
-                      {geo.competitionLevel}
-                    </div>
-                  </div>
-                  
-                  {/* Why Target This Geography Section */}
-                  {geo.whyTarget && (
-                    <div className="bg-marketing-50 p-3 rounded-md">
-                      <h4 className="font-medium text-sm mb-1 text-marketing-700">Why Target This Country:</h4>
-                      <p className="text-sm text-gray-700">{geo.whyTarget}</p>
-                    </div>
-                  )}
-                  
-                  {/* Brand Personality Section */}
-                  {geo.brandPersonality && (
-                    <div className="bg-blue-50 p-3 rounded-md">
-                      <h4 className="font-medium text-sm mb-1 text-blue-700">
-                        <span className="flex items-center gap-1">
-                          <BadgePercent className="h-4 w-4" /> Brand Personality
-                        </span>
-                      </h4>
-                      <p className="text-sm text-gray-700">{geo.brandPersonality}</p>
-                    </div>
-                  )}
-                  
-                  <div className="bg-marketing-50 p-3 rounded-md">
-                    <h4 className="font-medium text-sm mb-1 text-marketing-700">Recommendation:</h4>
-                    <p className="text-sm text-gray-700">{geo.recommendation}</p>
-                  </div>
-                  
-                  {/* Market Metrics Section - Consolidated */}
-                  <div className="bg-green-50 p-3 rounded-md">
-                    <h4 className="font-medium text-sm mb-1 text-green-700">
-                      <span className="flex items-center gap-1">
-                        <TrendingUp className="h-4 w-4" /> Market Metrics
-                      </span>
-                    </h4>
-                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-sm mt-1">
-                      <div>Pricing Power:</div>
-                      <div>{geo.pricingPower || 'Not specified'}</div>
-                      <div>Profitability:</div>
-                      <div className={getProfitabilityColor(geo.profitabilityRating)}>
-                        {geo.profitabilityRating || 'Not specified'}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div className="lg:col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {geographies.map((geo) => (
+                  <Card 
+                    key={geo.id} 
+                    className={`${geo.isCustomAdded ? "border-marketing-300 bg-marketing-50/30" : ""} 
+                               ${selectedGeoId === geo.id ? "ring-2 ring-marketing-500" : ""} 
+                               cursor-pointer`}
+                    onClick={() => selectGeography(geo.id)}
+                  >
+                    <CardHeader className="flex flex-row items-center gap-3">
+                      <MapPin className="h-6 w-6 text-marketing-600" />
+                      <div>
+                        <CardTitle className="text-xl">{geo.region}</CardTitle>
+                        <CardDescription>Market Size: {standardizeMarketSize(geo.marketSize)}</CardDescription>
                       </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            <Button 
-              variant="outline"
-              className="border-dashed border-2 border-gray-300 hover:border-marketing-400 flex flex-col items-center justify-center min-h-[200px] p-6"
-              onClick={handleGenerateGeographies}
-              disabled={isGenerating}
-            >
-              {isGenerating ? (
-                <Loader2 className="h-12 w-12 text-gray-400 mb-4 animate-spin" />
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        <div>
+                          <span className="font-medium">Growth Rate:</span>
+                        </div>
+                        <div>{geo.growthRate}</div>
+                        <div>
+                          <span className="font-medium">Competition:</span>
+                        </div>
+                        <div className={getCompetitionColor(geo.competitionLevel)}>
+                          {geo.competitionLevel}
+                        </div>
+                      </div>
+                      
+                      {/* Why Target This Geography Section */}
+                      {geo.whyTarget && (
+                        <div className="bg-marketing-50 p-3 rounded-md">
+                          <h4 className="font-medium text-sm mb-1 text-marketing-700">Why Target:</h4>
+                          <p className="text-sm text-gray-700">{geo.whyTarget}</p>
+                        </div>
+                      )}
+                      
+                      {/* Market Metrics Section - Combined */}
+                      <div className="bg-green-50 p-3 rounded-md">
+                        <h4 className="font-medium text-sm mb-1 text-green-700">
+                          <span className="flex items-center gap-1">
+                            <TrendingUp className="h-4 w-4" /> Market Metrics
+                          </span>
+                        </h4>
+                        <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-sm mt-1">
+                          <div>Pricing Power:</div>
+                          <div>{geo.pricingPower || 'Not specified'}</div>
+                          <div>Profitability:</div>
+                          <div className={getProfitabilityColor(geo.profitabilityRating)}>
+                            {geo.profitabilityRating || 'Not specified'}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <Button 
+                  variant="outline"
+                  className="border-dashed border-2 border-gray-300 hover:border-marketing-400 flex flex-col items-center justify-center min-h-[120px] p-6"
+                  onClick={handleGenerateGeographies}
+                  disabled={isGenerating}
+                >
+                  {isGenerating ? (
+                    <Loader2 className="h-8 w-8 text-gray-400 mb-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-8 w-8 text-gray-400 mb-4" />
+                  )}
+                  <p className="text-gray-600 font-medium">Generate More Countries</p>
+                </Button>
+                
+                <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Card className="border-dashed border-2 border-gray-300 hover:border-marketing-400 cursor-pointer flex flex-col items-center justify-center min-h-[120px]">
+                      <CardContent className="flex flex-col items-center justify-center p-6">
+                        <Plus className="h-8 w-8 text-gray-400 mb-4" />
+                        <p className="text-gray-600 font-medium">Add Custom Country</p>
+                      </CardContent>
+                    </Card>
+                  </DialogTrigger>
+                </Dialog>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              {selectedGeography ? (
+                <>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Market Details: {selectedGeography.region}</CardTitle>
+                      <CardDescription>
+                        Detailed information about this market
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <h3 className="font-semibold text-marketing-700 mb-2">Recommendation:</h3>
+                        <p className="text-sm text-gray-700">{selectedGeography.recommendation}</p>
+                      </div>
+                      
+                      {selectedGeography.brandPersonality && (
+                        <div>
+                          <h3 className="font-semibold text-blue-700 flex items-center gap-1 mb-2">
+                            <BadgePercent className="h-4 w-4" /> Brand Personality:
+                          </h3>
+                          <p className="text-sm text-gray-700">{selectedGeography.brandPersonality}</p>
+                        </div>
+                      )}
+                      
+                      <MarketAnalysis 
+                        business={business} 
+                        geography={selectedGeography}
+                      />
+                    </CardContent>
+                  </Card>
+                </>
               ) : (
-                <RefreshCw className="h-12 w-12 text-gray-400 mb-4" />
-              )}
-              <p className="text-gray-600 font-medium">Generate More Countries</p>
-            </Button>
-            
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Card className="border-dashed border-2 border-gray-300 hover:border-marketing-400 cursor-pointer flex flex-col items-center justify-center min-h-[200px]">
-                  <CardContent className="flex flex-col items-center justify-center p-6">
-                    <Plus className="h-12 w-12 text-gray-400 mb-4" />
-                    <p className="text-gray-600 font-medium">Add Custom Country</p>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Select a Geography</CardTitle>
+                    <CardDescription>
+                      Click on any country to view detailed market insights
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-center text-gray-500 py-6">
+                      Select a geography card to analyze market details
+                    </p>
                   </CardContent>
                 </Card>
-              </DialogTrigger>
-            </Dialog>
+              )}
+            </div>
           </div>
           
           <div className="flex justify-between">

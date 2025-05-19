@@ -1,41 +1,7 @@
 
 import { callOpenAI } from '../api/openaiApi';
 import { parseJsonResponse, ensureArray } from '../parsers/jsonParser';
-
-// Helper function to standardize market size
-const standardizeMarketSize = (marketSize: string): string => {
-  if (!marketSize) return '';
-  
-  // Check if already in standardized format
-  if (/^\d+(\.\d+)?[KMB]$/i.test(marketSize)) {
-    return marketSize.toUpperCase();
-  }
-  
-  // Convert market size to standardized format
-  const cleanedValue = marketSize.replace(/[^\d.]/g, '');
-  const numValue = parseFloat(cleanedValue);
-  
-  if (isNaN(numValue)) return marketSize;
-  
-  if (marketSize.toLowerCase().includes('billion') || marketSize.toLowerCase().includes('b')) {
-    return `${numValue}B`;
-  } else if (marketSize.toLowerCase().includes('million') || marketSize.toLowerCase().includes('m')) {
-    return `${numValue}M`;
-  } else if (marketSize.toLowerCase().includes('thousand') || marketSize.toLowerCase().includes('k')) {
-    return `${numValue}K`;
-  }
-  
-  // If the number is large enough, convert to appropriate unit
-  if (numValue >= 1_000_000_000) {
-    return `${(numValue / 1_000_000_000).toFixed(1)}B`;
-  } else if (numValue >= 1_000_000) {
-    return `${(numValue / 1_000_000).toFixed(1)}M`;
-  } else if (numValue >= 1_000) {
-    return `${(numValue / 1_000).toFixed(1)}K`;
-  }
-  
-  return marketSize;
-};
+import { standardizeMarketSize } from '../formatters/marketSizeFormatter';
 
 export const generateGeographies = async (business: any, existingGeographies: any[] = []): Promise<any[]> => {
   try {
