@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
@@ -22,10 +21,10 @@ interface ContentStepProps {
 
 /**
  * Helper function to render an icon based on content type
- * @param type The type of content (e.g., 'white paper', 'blog post')
- * @returns React element with the appropriate icon
  */
 const contentTypeIcon = (type: string) => {
+  if (!type) return <FileText className="h-5 w-5 text-gray-600" />;
+  
   switch (type.toLowerCase()) {
     case 'white paper':
       return <FileText className="h-5 w-5 text-blue-600" />;
@@ -41,12 +40,116 @@ const contentTypeIcon = (type: string) => {
 };
 
 /**
- * ContentStep Component
- * 
- * Manages the generation and display of content ideas based on business information,
- * target audience (ICPs), keywords, and unique selling points.
- * 
- * @param autoGenerate If true, automatically generates content ideas on component mount
+ * ContentCard Component - Displays an individual content idea card
+ */
+interface ContentCardProps {
+  content: ContentIdea;
+  onPublish: (id: string) => void;
+  onEdit: (content: ContentIdea) => void;
+}
+
+const ContentCard: React.FC<ContentCardProps> = ({ content, onPublish, onEdit }) => {
+  if (!content) return null;
+  
+  return (
+    <Card className={`${content.published ? "border-marketing-200 bg-marketing-50/30" : ""} ${content.isCustomAdded ? "border-marketing-300" : ""} transition-all duration-300 hover:shadow-md`}>
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-start gap-2">
+          <div className="flex gap-2 items-center">
+            {contentTypeIcon(content.type)}
+            <Badge variant="outline" className="bg-gray-100">
+              {content.type || 'Unknown Type'}
+            </Badge>
+          </div>
+          {content.published && (
+            <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+              Published
+            </Badge>
+          )}
+          {content.isCustomAdded && (
+            <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+              Custom
+            </Badge>
+          )}
+        </div>
+        <CardTitle className="text-xl mt-2">{content.title}</CardTitle>
+        <CardDescription>Target: {content.targetICP || 'Not specified'}</CardDescription>
+      </CardHeader>
+      <CardContent className="pb-2">
+        <div className="space-y-4">
+          {/* Target keywords section */}
+          <div>
+            <h4 className="text-sm font-medium mb-1">Target Keywords:</h4>
+            <div className="flex flex-wrap gap-2">
+              {Array.isArray(content.targetKeywords) && content.targetKeywords.length > 0 ? (
+                content.targetKeywords.map((keyword, idx) => (
+                  <Badge key={idx} variant="outline" className="bg-marketing-50 text-marketing-700">
+                    {keyword}
+                  </Badge>
+                ))
+              ) : (
+                <span className="text-sm text-gray-500">No keywords specified</span>
+              )}
+            </div>
+          </div>
+          
+          {/* Content outline section */}
+          <div>
+            <h4 className="text-sm font-medium mb-1">Outline:</h4>
+            {Array.isArray(content.outline) && content.outline.length > 0 ? (
+              <ul className="text-sm text-gray-600 pl-5 list-disc">
+                {content.outline.slice(0, 3).map((point, idx) => (
+                  <li key={idx} className="text-sm">{point}</li>
+                ))}
+                {content.outline.length > 3 && (
+                  <li className="text-marketing-600 font-medium">
+                    +{content.outline.length - 3} more sections
+                  </li>
+                )}
+              </ul>
+            ) : (
+              <p className="text-sm text-gray-500">No outline provided</p>
+            )}
+          </div>
+          
+          {/* Estimated value section */}
+          <div>
+            <h4 className="text-sm font-medium mb-1">Estimated Value:</h4>
+            <p className="text-sm text-gray-600">{content.estimatedValue || 'Not specified'}</p>
+          </div>
+        </div>
+      </CardContent>
+      <CardFooter className="flex justify-between pt-2">
+        <Button 
+          variant="outline" 
+          onClick={() => onEdit(content)} 
+          className="hover:bg-gray-100 transition-colors"
+        >
+          Edit Notes
+        </Button>
+        {content.published ? (
+          <div className="flex items-center gap-2">
+            <Checkbox id={`published-${content.id}`} checked={true} disabled />
+            <label htmlFor={`published-${content.id}`} className="text-sm font-medium text-gray-600">
+              Published
+            </label>
+          </div>
+        ) : (
+          <Button 
+            onClick={() => onPublish(content.id)} 
+            className="bg-marketing-600 hover:bg-marketing-700 text-white transition-all duration-300 flex items-center gap-2 group"
+          >
+            Publish
+            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+          </Button>
+        )}
+      </CardFooter>
+    </Card>
+  );
+};
+
+/**
+ * ContentStep Component - Main component
  */
 const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
   // Context and state
@@ -227,6 +330,8 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
    * Filter content ideas based on the selected tab
    */
   const filterContent = () => {
+    if (!Array.isArray(contentIdeas)) return [];
+    
     if (selectedTab === 'all') return contentIdeas;
     if (selectedTab === 'published') return contentIdeas.filter(item => item.published);
     return contentIdeas.filter(item => !item.published);
@@ -257,7 +362,7 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
       </p>
 
       {/* Display empty state when no content ideas exist */}
-      {contentIdeas.length === 0 ? (
+      {!Array.isArray(contentIdeas) || contentIdeas.length === 0 ? (
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Generate Content Ideas</CardTitle>
@@ -609,107 +714,6 @@ const ContentStep: React.FC<ContentStepProps> = ({ autoGenerate = false }) => {
         </DialogContent>
       </Dialog>
     </div>
-  );
-};
-
-/**
- * ContentCard Component
- * 
- * Displays an individual content idea card with options to publish or edit
- */
-interface ContentCardProps {
-  content: ContentIdea;
-  onPublish: (id: string) => void;
-  onEdit: (content: ContentIdea) => void;
-}
-
-const ContentCard: React.FC<ContentCardProps> = ({ content, onPublish, onEdit }) => {
-  return (
-    <Card className={`${content.published ? "border-marketing-200 bg-marketing-50/30" : ""} ${content.isCustomAdded ? "border-marketing-300" : ""} transition-all duration-300 hover:shadow-md`}>
-      <CardHeader className="pb-3">
-        <div className="flex justify-between items-start gap-2">
-          <div className="flex gap-2 items-center">
-            {contentTypeIcon(content.type)}
-            <Badge variant="outline" className="bg-gray-100">
-              {content.type}
-            </Badge>
-          </div>
-          {content.published && (
-            <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-              Published
-            </Badge>
-          )}
-          {content.isCustomAdded && (
-            <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">
-              Custom
-            </Badge>
-          )}
-        </div>
-        <CardTitle className="text-xl mt-2">{content.title}</CardTitle>
-        <CardDescription>Target: {content.targetICP}</CardDescription>
-      </CardHeader>
-      <CardContent className="pb-2">
-        <div className="space-y-4">
-          {/* Target keywords section */}
-          <div>
-            <h4 className="text-sm font-medium mb-1">Target Keywords:</h4>
-            <div className="flex flex-wrap gap-2">
-              {content.targetKeywords.map((keyword, idx) => (
-                <Badge key={idx} variant="outline" className="bg-marketing-50 text-marketing-700">
-                  {keyword}
-                </Badge>
-              ))}
-            </div>
-          </div>
-          
-          {/* Content outline section */}
-          <div>
-            <h4 className="text-sm font-medium mb-1">Outline:</h4>
-            <ul className="text-sm text-gray-600 pl-5 list-disc">
-              {content.outline.slice(0, 3).map((point, idx) => (
-                <li key={idx} className="text-sm">{point}</li>
-              ))}
-              {content.outline.length > 3 && (
-                <li className="text-marketing-600 font-medium">
-                  +{content.outline.length - 3} more sections
-                </li>
-              )}
-            </ul>
-          </div>
-          
-          {/* Estimated value section */}
-          <div>
-            <h4 className="text-sm font-medium mb-1">Estimated Value:</h4>
-            <p className="text-sm text-gray-600">{content.estimatedValue}</p>
-          </div>
-        </div>
-      </CardContent>
-      <CardFooter className="flex justify-between pt-2">
-        <Button 
-          variant="outline" 
-          onClick={() => onEdit(content)} 
-          className="hover:bg-gray-100 transition-colors"
-        >
-          Edit Notes
-        </Button>
-        {content.published ? (
-          <div className="flex items-center gap-2">
-            <Checkbox id={`published-${content.id}`} checked={true} disabled />
-            <label htmlFor={`published-${content.id}`} className="text-sm font-medium text-gray-600">
-              Published
-            </label>
-          </div>
-        ) : (
-          <Button 
-            onClick={() => onPublish(content.id)} 
-            className="bg-marketing-600 hover:bg-marketing-700 text-white transition-all duration-300 flex items-center gap-2 group"
-          >
-            Publish
-            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-          </Button>
-        )}
-      </CardFooter>
-    </Card>
   );
 };
 

@@ -39,20 +39,23 @@ import { fetchKeywordStats, optimizeKeywords, generateMoreSynonyms } from '@/ser
 interface KeywordStepProps {}
 
 const getDifficultyColor = (difficulty: string) => {
+  if (!difficulty) return 'bg-gray-100 text-gray-800';
   if (difficulty.toLowerCase().includes('low')) return 'bg-green-100 text-green-800';
   if (difficulty.toLowerCase().includes('high')) return 'bg-red-100 text-red-800';
   return 'bg-amber-100 text-amber-800';
 };
 
 const getRelevanceColor = (relevance: string) => {
+  if (!relevance) return 'bg-gray-100 text-gray-800';
   if (relevance.toLowerCase() === 'high') return 'bg-green-100 text-green-800';
   if (relevance.toLowerCase() === 'low') return 'bg-gray-100 text-gray-800';
   return 'bg-blue-100 text-blue-800';
 };
 
 const getCompetitorUsageColor = (usage: string) => {
-  if (usage?.toLowerCase() === 'high') return 'bg-red-100 text-red-800';
-  if (usage?.toLowerCase() === 'low') return 'bg-green-100 text-green-800';
+  if (!usage) return 'bg-gray-100 text-gray-800';
+  if (usage.toLowerCase() === 'high') return 'bg-red-100 text-red-800';
+  if (usage.toLowerCase() === 'low') return 'bg-green-100 text-green-800';
   return 'bg-blue-100 text-blue-800';
 };
 
@@ -98,11 +101,15 @@ const KeywordStep: React.FC<KeywordStepProps> = () => {
     // Filter keywords based on search term
     const filteredKeywords = keywords.filter(keyword => 
       keyword.term.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      keyword.relatedICP.toLowerCase().includes(searchTerm.toLowerCase())
+      (keyword.relatedICP && keyword.relatedICP.toLowerCase().includes(searchTerm.toLowerCase()))
     );
     
     // Sort filtered keywords
     return [...filteredKeywords].sort((a, b) => {
+      if (!a[sortConfig.key] && !b[sortConfig.key]) return 0;
+      if (!a[sortConfig.key]) return 1;
+      if (!b[sortConfig.key]) return -1;
+      
       const aValue = String(a[sortConfig.key] || '').toLowerCase();
       const bValue = String(b[sortConfig.key] || '').toLowerCase();
       
@@ -435,27 +442,25 @@ const KeywordStep: React.FC<KeywordStepProps> = () => {
                         onClick={() => handleKeywordClick(keyword)}
                       >
                         <TableCell className="font-medium">{keyword.term}</TableCell>
-                        <TableCell>{keyword.searchVolume}</TableCell>
+                        <TableCell>{keyword.searchVolume || 'N/A'}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className={getDifficultyColor(keyword.difficulty)}>
-                            {keyword.difficulty}
+                            {keyword.difficulty || 'Not set'}
                           </Badge>
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className={getRelevanceColor(keyword.relevance)}>
-                            {keyword.relevance}
+                            {keyword.relevance || 'Not set'}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {keyword.competitorUsage && (
-                            <Badge variant="outline" className={getCompetitorUsageColor(keyword.competitorUsage)}>
-                              {keyword.competitorUsage}
-                            </Badge>
-                          )}
+                          <Badge variant="outline" className={getCompetitorUsageColor(keyword.competitorUsage)}>
+                            {keyword.competitorUsage || 'Not set'}
+                          </Badge>
                         </TableCell>
                         <TableCell>
-                          <span style={{ opacity: getIcpOpacity(keyword.relatedICP) }}>
-                            {keyword.relatedICP}
+                          <span style={{ opacity: keyword.relatedICP ? getIcpOpacity(keyword.relatedICP) : 0.5 }}>
+                            {keyword.relatedICP || 'Not set'}
                           </span>
                         </TableCell>
                       </TableRow>

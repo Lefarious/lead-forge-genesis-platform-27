@@ -11,25 +11,25 @@ export const generateContentIdeas = async (
   existingIdeas: any[] = []
 ): Promise<any[]> => {
   try {
-    const existingTitles = existingIdeas.map(idea => idea.title.toLowerCase());
+    const existingTitles = existingIdeas.map(idea => (idea.title || '').toLowerCase());
     
     // Create prompts from data
-    const businessPrompt = `Business Name: ${business.name}\nIndustry: ${business.industry}\nDescription: ${business.description}\nTarget Market: ${business.targetMarket}`;
+    const businessPrompt = `Business Name: ${business.name || 'Not specified'}\nIndustry: ${business.industry || 'Not specified'}\nDescription: ${business.description || 'Not specified'}\nTarget Market: ${business.targetMarket || 'Not specified'}`;
     
     const icpPrompt = icps.map(icp => 
-      `ICP: ${icp.title}\nDescription: ${icp.description}\nPain Points: ${icp.painPoints}\nGoals: ${icp.goals}`
+      `ICP: ${icp.title || 'Untitled'}\nDescription: ${icp.description || 'No description'}\nPain Points: ${Array.isArray(icp.painPoints) ? icp.painPoints.join(', ') : (icp.painPoints || 'Not specified')}\nGoals: ${Array.isArray(icp.goals) ? icp.goals.join(', ') : (icp.goals || 'Not specified')}`
     ).join('\n\n');
     
-    const keywordPrompt = `Keywords: ${keywords.map(k => k.term).join(', ')}`;
+    const keywordPrompt = `Keywords: ${keywords.map(k => k.term || 'Unknown').join(', ')}`;
     
     // Include USPs in prompt
     const uspPrompt = usps.length > 0 
-      ? `USPs: ${usps.map(usp => `${usp.title} - ${usp.description}`).join('\n')}`
+      ? `USPs: ${usps.map(usp => `${usp.title || 'Untitled'} - ${usp.description || 'No description'}`).join('\n')}`
       : '';
     
     // Include Geographies in prompt
     const geoPrompt = geographies.length > 0
-      ? `Target Geographies: ${geographies.map(geo => `${geo.region} (${geo.marketSize}, ${geo.growthRate} growth)`).join('\n')}`
+      ? `Target Geographies: ${geographies.map(geo => `${geo.region || 'Unknown region'} (${geo.marketSize || 'Unknown size'}, ${geo.growthRate || 'Unknown'} growth)`).join('\n')}`
       : '';
     
     // Include existing content titles to avoid duplication
@@ -73,16 +73,20 @@ export const generateContentIdeas = async (
       throw new Error('No valid content ideas found in response');
     }
     
-    return contentIdeas.map((idea: any, index: number) => ({
-      id: `gen-content-${Date.now()}-${index}`,
-      title: idea.title,
-      type: idea.type,
-      targetICP: idea.targetICP,
-      targetKeywords: idea.targetKeywords,
-      outline: idea.outline,
-      estimatedValue: idea.estimatedValue,
-      published: false
-    }));
+    return contentIdeas.map((idea: any, index: number) => {
+      // Ensure each idea has all required fields with defaults for missing values
+      return {
+        id: `gen-content-${Date.now()}-${index}`,
+        title: idea.title || 'Untitled Content',
+        type: idea.type || 'Blog Post',
+        targetICP: idea.targetICP || (icps.length > 0 ? icps[0].title : 'General Audience'),
+        targetKeywords: Array.isArray(idea.targetKeywords) ? idea.targetKeywords : [idea.targetKeywords || 'general'],
+        outline: Array.isArray(idea.outline) ? idea.outline : [idea.outline || 'Introduction'],
+        estimatedValue: idea.estimatedValue || 'Medium',
+        published: false,
+        isCustomAdded: false
+      };
+    });
   } catch (error) {
     console.error('Content generation error:', error);
     throw error;

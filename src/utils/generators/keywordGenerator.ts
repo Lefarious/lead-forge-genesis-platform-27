@@ -15,9 +15,9 @@ export const generateKeywords = async (
     
     // Prepare all business data as key-value pairs
     const businessData = {
-      name: business.name,
-      industry: business.industry,
-      description: business.description,
+      name: business.name || '',
+      industry: business.industry || '',
+      description: business.description || '',
       mainProblem: business.mainProblem || 'Not specified',
       mainSolution: business.mainSolution || 'Not specified',
       targetAudience: business.targetAudience || 'Not specified',
@@ -26,32 +26,32 @@ export const generateKeywords = async (
     
     // Prepare ICP data
     const icpData = icps.map(icp => ({
-      title: icp.title,
-      description: icp.description,
-      painPoints: Array.isArray(icp.painPoints) ? icp.painPoints : [icp.painPoints],
-      goals: Array.isArray(icp.goals) ? icp.goals : [icp.goals],
-      demographics: typeof icp.demographics === 'string' ? icp.demographics : JSON.stringify(icp.demographics),
-      blueOceanScore: icp.blueOceanScore
+      title: icp.title || '',
+      description: icp.description || '',
+      painPoints: Array.isArray(icp.painPoints) ? icp.painPoints : [icp.painPoints || ''],
+      goals: Array.isArray(icp.goals) ? icp.goals : [icp.goals || ''],
+      demographics: typeof icp.demographics === 'string' ? icp.demographics : JSON.stringify(icp.demographics || {}),
+      blueOceanScore: icp.blueOceanScore || 0
     }));
     
     // Prepare USP data
     const uspData = usps.map(usp => ({
-      title: usp.title,
-      description: usp.description,
-      targetICP: usp.targetICP,
-      valueProposition: usp.valueProposition
+      title: usp.title || '',
+      description: usp.description || '',
+      targetICP: usp.targetICP || '',
+      valueProposition: usp.valueProposition || ''
     }));
     
     // Prepare geography data
     const geoData = geographies.map(geo => ({
-      region: geo.region,
-      marketSize: geo.marketSize,
-      growthRate: geo.growthRate,
-      competitionLevel: geo.competitionLevel,
-      whyTarget: geo.whyTarget,
-      pricingPower: geo.pricingPower,
-      profitabilityRating: geo.profitabilityRating,
-      brandPersonality: geo.brandPersonality
+      region: geo.region || '',
+      marketSize: geo.marketSize || '',
+      growthRate: geo.growthRate || '',
+      competitionLevel: geo.competitionLevel || '',
+      whyTarget: geo.whyTarget || '',
+      pricingPower: geo.pricingPower || '',
+      profitabilityRating: geo.profitabilityRating || '',
+      brandPersonality: geo.brandPersonality || ''
     }));
     
     // Include existing keywords to avoid duplication
@@ -109,14 +109,15 @@ export const generateKeywords = async (
       !existingTerms.includes((kw.term || '').toLowerCase())
     );
     
+    // Apply default values to any missing fields
     return keywords.map((keyword: any, index: number) => ({
       id: `gen-kw-${Date.now()}-${index}`,
-      term: keyword.term,
-      searchVolume: keyword.searchVolume,
-      difficulty: keyword.difficulty,
-      relevance: keyword.relevance,
-      relatedICP: keyword.relatedICP,
-      competitorUsage: keyword.competitorUsage,
+      term: keyword.term || 'Untitled Keyword',
+      searchVolume: keyword.searchVolume || 'Unknown',
+      difficulty: keyword.difficulty || 'Medium',
+      relevance: keyword.relevance || 'Medium',
+      relatedICP: keyword.relatedICP || (icps.length > 0 ? icps[0].title : 'General'),
+      competitorUsage: keyword.competitorUsage || 'Medium',
       isCustomAdded: false
     }));
   } catch (error) {
