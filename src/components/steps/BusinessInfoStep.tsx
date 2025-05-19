@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 
 /**
@@ -32,6 +33,13 @@ const BusinessInfoStep: React.FC = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  /**
+   * Handle country selection change
+   */
+  const handleCountryChange = (value: string) => {
+    setFormData(prev => ({ ...prev, country: value }));
   };
 
   /**
@@ -63,6 +71,15 @@ const BusinessInfoStep: React.FC = () => {
     setCurrentStep(2);
     toast.success('Business information saved!');
   };
+
+  // List of countries for dropdown
+  const countries = [
+    "United States", "Canada", "United Kingdom", "Australia", "Germany",
+    "France", "Japan", "China", "India", "Brazil", "Mexico", "Spain",
+    "Italy", "South Korea", "Netherlands", "Singapore", "Sweden", "Switzerland",
+    "Norway", "Denmark", "Finland", "Austria", "Belgium", "Ireland", "New Zealand",
+    "South Africa", "United Arab Emirates", "Israel", "Russia", "Poland"
+  ];
 
   return (
     <div className="container py-8 max-w-3xl animate-fade-in">
@@ -134,17 +151,24 @@ const BusinessInfoStep: React.FC = () => {
               />
             </div>
 
-            {/* Origin country input */}
+            {/* Origin country dropdown */}
             <div className="space-y-2">
               <Label htmlFor="country">Origin Country *</Label>
-              <Input
-                id="country"
-                name="country"
+              <Select
                 value={formData.country}
-                onChange={handleInputChange}
-                placeholder="United States, Canada, etc."
-                required
-              />
+                onValueChange={handleCountryChange}
+              >
+                <SelectTrigger id="country">
+                  <SelectValue placeholder="Select your business origin country" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  {countries.map((country) => (
+                    <SelectItem key={country} value={country}>
+                      {country}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
           <CardFooter className="flex justify-end">
