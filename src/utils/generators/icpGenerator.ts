@@ -2,6 +2,8 @@
 import { callOpenAI } from '../api/openaiApi';
 import { parseJsonResponse, ensureArray } from '../parsers/jsonParser';
 
+const GENERATION_TIMEOUT = 30000; // 30 seconds timeout
+
 export const generateICPs = async (business: any, existingICPs: any[] = []): Promise<any[]> => {
   try {
     // Extract existing titles to avoid duplicates
@@ -36,48 +38,71 @@ export const generateICPs = async (business: any, existingICPs: any[] = []): Pro
       }
     ];
 
-    const responseData = await callOpenAI(messages, { maxTokens: 1500 });
-    console.log('ICP generation response:', responseData);
+    // Create an AbortController for the timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), GENERATION_TIMEOUT);
 
-    const contentString = responseData.choices[0].message.content;
-    console.log('Raw ICP content:', contentString);
-    
-    const parsedContent = parseJsonResponse(contentString);
-    let icps = ensureArray(parsedContent);
-    
-    // Validate that we have data
-    if (!icps || icps.length === 0) {
-      throw new Error('No valid ICPs found in response');
+    try {
+      const responseData = await callOpenAI(messages, { 
+        maxTokens: 1500,
+        signal: controller.signal 
+      });
+      
+      // Clear the timeout since we got a response
+      clearTimeout(timeoutId);
+      
+      console.log('ICP generation response:', responseData);
+
+      const contentString = responseData.choices[0].message.content;
+      console.log('Raw ICP content:', contentString);
+      
+      const parsedContent = parseJsonResponse(contentString);
+      let icps = ensureArray(parsedContent);
+      
+      // Validate that we have data
+      if (!icps || icps.length === 0) {
+        throw new Error('No valid ICPs found in response');
+      }
+      
+      console.log('Parsed ICPs:', icps);
+      
+      // Filter out any ICPs that duplicate existing ones
+      icps = icps.filter(icp => !existingTitles.includes((icp.title || '').toLowerCase()));
+      
+      // Format the ICPs into our standard structure
+      return icps.map((icp: any, index: number) => ({
+        id: `gen-icp-${Date.now()}-${index}`,
+        title: icp.title,
+        description: icp.description,
+        demographics: typeof icp.demographics === 'string' ? 
+          icp.demographics : 
+          JSON.stringify(icp.demographics || {}),
+        blueOceanScore: icp.blueOceanScore || 5,
+        reachMethods: Array.isArray(icp.reachMethods) ? 
+          icp.reachMethods : 
+          [icp.reachMethods || ""],
+        productSuggestions: Array.isArray(icp.productSuggestions) ? 
+          icp.productSuggestions : 
+          [icp.productSuggestions || ""],
+        painPoints: Array.isArray(icp.painPoints) ? 
+          icp.painPoints : 
+          [icp.painPoints || ""],
+        goals: Array.isArray(icp.goals) ? 
+          icp.goals : 
+          [icp.goals || ""],
+        isCustomAdded: false
+      }));
+    } catch (error) {
+      // Make sure to clear the timeout to avoid memory leaks
+      clearTimeout(timeoutId);
+      
+      // Check if this was a timeout abortion
+      if (error.name === 'AbortError') {
+        throw new Error('ICP generation request timed out. Please try again.');
+      }
+      
+      throw error;
     }
-    
-    console.log('Parsed ICPs:', icps);
-    
-    // Filter out any ICPs that duplicate existing ones
-    icps = icps.filter(icp => !existingTitles.includes((icp.title || '').toLowerCase()));
-    
-    // Format the ICPs into our standard structure
-    return icps.map((icp: any, index: number) => ({
-      id: `gen-icp-${Date.now()}-${index}`,
-      title: icp.title,
-      description: icp.description,
-      demographics: typeof icp.demographics === 'string' ? 
-        icp.demographics : 
-        JSON.stringify(icp.demographics || {}),
-      blueOceanScore: icp.blueOceanScore || 5,
-      reachMethods: Array.isArray(icp.reachMethods) ? 
-        icp.reachMethods : 
-        [icp.reachMethods || ""],
-      productSuggestions: Array.isArray(icp.productSuggestions) ? 
-        icp.productSuggestions : 
-        [icp.productSuggestions || ""],
-      painPoints: Array.isArray(icp.painPoints) ? 
-        icp.painPoints : 
-        [icp.painPoints || ""],
-      goals: Array.isArray(icp.goals) ? 
-        icp.goals : 
-        [icp.goals || ""],
-      isCustomAdded: false
-    }));
   } catch (error) {
     console.error('ICP generation error:', error);
     throw error;

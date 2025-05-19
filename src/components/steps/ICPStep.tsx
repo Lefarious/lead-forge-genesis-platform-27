@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { Loader2, Plus, Edit, Trash, RefreshCw, List, Lightbulb } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { ICP } from '@/contexts/MarketingToolContext';
@@ -24,6 +24,7 @@ const ICPStep: React.FC<ICPStepProps> = () => {
   const [editingICP, setEditingICP] = useState<ICP | null>(null);
   const [validating, setValidating] = useState(false);
   const [validationFeedback, setValidationFeedback] = useState<{isValid: boolean, feedback: string} | null>(null);
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
   const [formData, setFormData] = useState<Omit<ICP, 'id'>>({
     title: '',
     description: '',
@@ -37,39 +38,66 @@ const ICPStep: React.FC<ICPStepProps> = () => {
 
   const handleGenerateICPs = async () => {
     if (!localStorage.getItem('openai_api_key')) {
-      toast.error('Please set your OpenAI API key first');
+      toast("Please set your OpenAI API key first");
       return;
     }
 
     setIsGenerating(true);
+    // Create a new abort controller
+    const controller = new AbortController();
+    setAbortController(controller);
+    
     try {
       const generatedICPs = await generateICPs(business);
       setICPs(generatedICPs);
-      toast.success('Ideal Customer Profiles generated!');
+      toast("Ideal Customer Profiles generated!");
     } catch (error) {
-      toast.error('Failed to generate ICPs');
-      console.error(error);
+      if (error.name === 'AbortError') {
+        toast("ICP generation was canceled");
+      } else {
+        toast("Failed to generate ICPs");
+        console.error(error);
+      }
     } finally {
       setIsGenerating(false);
+      setAbortController(null);
+    }
+  };
+
+  const handleCancelGeneration = () => {
+    if (abortController) {
+      abortController.abort();
+      setAbortController(null);
+      setIsGenerating(false);
+      toast("ICP generation canceled");
     }
   };
 
   const handleGenerateMoreICPs = async () => {
     if (!localStorage.getItem('openai_api_key')) {
-      toast.error('Please set your OpenAI API key first');
+      toast("Please set your OpenAI API key first");
       return;
     }
 
     setIsGenerating(true);
+    // Create a new abort controller
+    const controller = new AbortController();
+    setAbortController(controller);
+    
     try {
       const moreICPs = await generateICPs(business, icps);
       setICPs([...icps, ...moreICPs]);
-      toast.success('Additional ICPs generated!');
+      toast("Additional ICPs generated!");
     } catch (error) {
-      toast.error('Failed to generate additional ICPs');
-      console.error(error);
+      if (error.name === 'AbortError') {
+        toast("ICP generation was canceled");
+      } else {
+        toast("Failed to generate additional ICPs");
+        console.error(error);
+      }
     } finally {
       setIsGenerating(false);
+      setAbortController(null);
     }
   };
 
@@ -103,7 +131,7 @@ const ICPStep: React.FC<ICPStepProps> = () => {
 
   const validateICP = async () => {
     if (!localStorage.getItem('openai_api_key')) {
-      toast.error('Please set your OpenAI API key first');
+      toast("Please set your OpenAI API key first");
       return;
     }
     
@@ -115,13 +143,13 @@ const ICPStep: React.FC<ICPStepProps> = () => {
       setValidationFeedback(result);
       
       if (result.isValid) {
-        toast.success('ICP validation passed!');
+        toast("ICP validation passed!");
       } else {
-        toast.error('ICP validation failed. See feedback.');
+        toast("ICP validation failed. See feedback.");
       }
     } catch (error) {
       console.error('Validation error:', error);
-      toast.error('Failed to validate ICP');
+      toast("Failed to validate ICP");
     } finally {
       setValidating(false);
     }
@@ -247,14 +275,23 @@ const ICPStep: React.FC<ICPStepProps> = () => {
             </Button>
             <div className="flex items-center gap-2">
               <ApiKeyInput />
-              <Button 
-                onClick={handleGenerateICPs} 
-                className="bg-marketing-600 hover:bg-marketing-700"
-                disabled={isGenerating}
-              >
-                {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Generate ICPs
-              </Button>
+              {isGenerating ? (
+                <Button 
+                  onClick={handleCancelGeneration}
+                  variant="destructive"
+                >
+                  Cancel Generation
+                </Button>
+              ) : (
+                <Button 
+                  onClick={handleGenerateICPs} 
+                  className="bg-marketing-600 hover:bg-marketing-700"
+                  disabled={isGenerating}
+                >
+                  {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Generate ICPs
+                </Button>
+              )}
             </div>
           </CardFooter>
         </Card>
@@ -357,11 +394,25 @@ const ICPStep: React.FC<ICPStepProps> = () => {
               disabled={isGenerating}
             >
               {isGenerating ? (
-                <Loader2 className="h-12 w-12 text-gray-400 mb-4 animate-spin" />
+                <>
+                  <Loader2 className="h-12 w-12 text-gray-400 mb-4 animate-spin" />
+                  <Button 
+                    variant="destructive" 
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCancelGeneration();
+                    }}
+                  >
+                    Cancel Generation
+                  </Button>
+                </>
               ) : (
-                <RefreshCw className="h-12 w-12 text-gray-400 mb-4" />
+                <>
+                  <RefreshCw className="h-12 w-12 text-gray-400 mb-4" />
+                  <p className="text-gray-600 font-medium">Generate More ICPs</p>
+                </>
               )}
-              <p className="text-gray-600 font-medium">Generate More ICPs</p>
             </Button>
             
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

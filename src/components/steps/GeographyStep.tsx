@@ -63,8 +63,7 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
   const handleGenerateGeographies = async () => {
     if (!localStorage.getItem('openai_api_key')) {
       toast("Please set your OpenAI API key first", {
-        description: "An API key is required to generate geographies",
-        variant: "destructive"
+        description: "An API key is required to generate geographies"
       });
       return;
     }
@@ -76,12 +75,11 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
       
       setGeographies([...geographies, ...generatedGeographies]); // Append new geographies
       toast("New target geographies generated!", {
-        description: "Check out your recommended target countries",
+        description: "Check out your recommended target countries"
       });
     } catch (error) {
       toast("Failed to generate geographies", {
-        description: error instanceof Error ? error.message : "An error occurred",
-        variant: "destructive"
+        description: error instanceof Error ? error.message : "An error occurred"
       });
       console.error(error);
     } finally {
@@ -93,8 +91,7 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
     if (!newGeography.region || !newGeography.marketSize || !newGeography.growthRate || 
         !newGeography.competitionLevel || !newGeography.recommendation) {
       toast("Please fill all required fields", {
-        description: "All fields with * are required",
-        variant: "destructive"
+        description: "All fields with * are required"
       });
       return;
     }
@@ -125,9 +122,7 @@ const GeographyStep: React.FC<GeographyStepProps> = () => {
 
   const handleContinue = () => {
     if (geographies.length === 0) {
-      toast("Please generate geographies first", {
-        variant: "destructive"
-      });
+      toast("Please generate geographies first");
       return;
     }
     setCurrentStep(5);
