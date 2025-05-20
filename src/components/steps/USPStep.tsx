@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useMarketingTool } from '@/contexts/MarketingToolContext';
 import { Button } from '@/components/ui/button';
@@ -17,10 +18,13 @@ const USPStep: React.FC = () => {
     setCurrentStep, 
     isGenerating, 
     setIsGenerating, 
-    addCustomUSP 
+    addCustomUSP,
+    updateUsp,
+    deleteUsp 
   } = useMarketingTool();
   
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [editingUspId, setEditingUspId] = useState<string | null>(null);
 
   const handleGenerateUSPs = async () => {
     if (!localStorage.getItem('openai_api_key')) {
@@ -75,6 +79,19 @@ const USPStep: React.FC = () => {
     addCustomUSP(newUSP);
   };
 
+  const handleEditUSP = (id: string) => {
+    setEditingUspId(id);
+    setIsAddDialogOpen(true);
+  };
+
+  const handleDeleteUSP = (id: string) => {
+    deleteUsp(id);
+    toast({
+      title: "USP Deleted",
+      description: "The unique selling point has been removed."
+    });
+  };
+
   const handleContinue = () => {
     if (usps.length === 0) {
       toast.error('Please generate USPs first');
@@ -98,7 +115,12 @@ const USPStep: React.FC = () => {
         />
       ) : (
         <>
-          <USPList usps={usps} business={business} />
+          <USPList 
+            usps={usps} 
+            business={business} 
+            onEdit={handleEditUSP}
+            onDelete={handleDeleteUSP}
+          />
           
           <USPGenerationControls
             isGenerating={isGenerating}
