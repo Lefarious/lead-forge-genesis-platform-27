@@ -1,13 +1,13 @@
 
 import React from 'react';
 import USPCard from './USPCard';
-import { USP } from '@/contexts/MarketingToolContext';
+import { USP, BusinessInfo } from '@/contexts/MarketingToolContext';
 
 interface USPListProps {
   usps: USP[];
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
-  business: any;
+  business: BusinessInfo;
 }
 
 const USPList: React.FC<USPListProps> = ({ usps, onEdit, onDelete, business }) => {
